@@ -17,6 +17,28 @@ public class Rev {
     }
 
     @Attribute(required = false)
+    private int parentid;
+
+    public int getParentid() {
+        return parentid;
+    }
+
+    public void setParentid(final int parentid) {
+        this.parentid = parentid;
+    }
+
+    @Attribute(required = false)
+    private int revid;
+
+    public int getRevid() {
+        return revid;
+    }
+
+    public void setRevid(final int revid) {
+        this.revid = revid;
+    }
+
+    @Attribute(required = false)
 	private String user;
 
 	@Attribute(required = false)
