@@ -7,7 +7,7 @@ import org.simpleframework.xml.Root;
 public class CategoryMember {
 
     @Attribute
-    private String pageid;
+    private int pageid;
 
     @Attribute
     private String ns;
@@ -15,10 +15,10 @@ public class CategoryMember {
     @Attribute
     private String title;
 
-    public String getPageid() {
+    public int getPageid() {
         return pageid;
     }
-    public void setPageid(final String pageid) {
+    public void setPageid(final int pageid) {
         this.pageid = pageid;
     }
     public String getNs() {

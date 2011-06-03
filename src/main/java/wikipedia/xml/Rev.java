@@ -5,7 +5,7 @@ import org.simpleframework.xml.Text;
 
 public class Rev {
 
-    @Text
+    @Text(required = false)
     private String value;
 
     public String getValue() {
@@ -14,6 +14,17 @@ public class Rev {
 
     public void setValue(final String value) {
         this.value = value;
+    }
+
+    @Attribute(required = false)
+    private String texthidden;
+
+    public String getTexthidden() {
+        return texthidden;
+    }
+
+    public void setTexthidden(final String texthidden) {
+        this.texthidden = texthidden;
     }
 
     @Attribute(required = false)

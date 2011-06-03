@@ -18,6 +18,7 @@ public class XMLTransformer {
             return PERSISTER.read(Api.class, xmlContent);
         } catch (Exception e) {
             LOG.error("Error while Parsing XML!", e);
+            LOG.error("XML was: " + xmlContent);
             throw new RuntimeException(e);
         }
     }

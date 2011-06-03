@@ -20,7 +20,7 @@ public class Page {
         this.pageid = pageid;
     }
 
-    @ElementList
+    @ElementList(required = false)
 	private List<Rev> revisions;
 
 	public void setRevisions(final List<Rev> revisions) {
