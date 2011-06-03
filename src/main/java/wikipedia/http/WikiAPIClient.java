@@ -26,7 +26,7 @@ import util.Const;
 
 public class WikiAPIClient {
 
-    private static final int HTTP_TIMEOUT = 10000;
+    private static final int HTTP_TIMEOUT = 15000; //milisec
     private static final Logger LOG = LoggerFactory.getLogger(WikiAPIClient.class.getName());
 
     private final DefaultHttpClient httpclient;

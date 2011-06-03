@@ -1,15 +1,25 @@
 package wikipedia.http;
 
-import org.joda.time.DateTime;
 import org.junit.Test;
+
+import wikipedia.database.DBUtil;
 
 public class TestPageLinkInfoFetcher {
 
     @Test
     public void getLinksByDate() {
-        PageLinkInfoFetcher plf = new PageLinkInfoFetcher("Barack Obama", "en", new DateTime().withYear(2004));
-        PageLinkInfoFetcher plf2 = new PageLinkInfoFetcher("Måns Zelmerlöw", "en", new DateTime().withYear(2010));
-        System.out.println(plf.getLinkInformation());
-        System.out.println(plf2.getLinkInformation());
+        DBUtil dbu = new DBUtil();
+        //PageLinkInfoFetcher plf = new PageLinkInfoFetcher("Barack Obama", "en", new DateTime().withYear(2004), dbu.getJdbcTemplate());
+        //PageLinkInfoFetcher plf2 = new PageLinkInfoFetcher("Måns Zelmerlöw", "en", new DateTime().withYear(2010), dbu.getJdbcTemplate());
+        //System.out.println(plf.getLinkInformation());
+        //System.out.println(plf2.getLinkInformation());
+    }
+
+    @Test
+    public void getFirstDate() {
+        FirstRevisionFetcher frf = new FirstRevisionFetcher("en", "Barack Obama");
+        System.out.println(frf.getFirstRevisionDate());
+        FirstRevisionFetcher frf2 = new FirstRevisionFetcher("en", "Måns Zelmerlöw");
+        System.out.println(frf2.getFirstRevisionDate());
     }
 }

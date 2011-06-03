@@ -1,5 +1,6 @@
 package wikipedia.http;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,8 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
+import wikipedia.database.DBUtil;
 import wikipedia.network.PageLinkInfo;
 import wikipedia.xml.Api;
+import wikipedia.xml.Page;
+import wikipedia.xml.Rev;
 import wikipedia.xml.XMLTransformer;
 
 import com.google.common.collect.Lists;
@@ -28,11 +32,15 @@ public class PageLinkInfoFetcher {
     private final String lang;
     private final String pageName;
     private final DateTime revisionDate;
+    private final int pageId;
+    private final DBUtil dbUtil;
 
-    public PageLinkInfoFetcher(final String pageName, final String lang, final DateTime revisionDate) {
+    public PageLinkInfoFetcher(final String pageName, final int pageId, final String lang, final DateTime revisionDate, final DBUtil dbUtil) {
         this.pageName = pageName;
+        this.pageId = pageId;
         this.lang = lang;
         this.revisionDate = revisionDate;
+        this.dbUtil = dbUtil;
     }
 
     public PageLinkInfo getLinkInformation() {
@@ -40,9 +48,19 @@ public class PageLinkInfoFetcher {
         LOG.info("Fetching URL: " + url);
         String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
         Api revisionFromXML = XMLTransformer.getRevisionFromXML(xmlResponse);
-        final String pageText = revisionFromXML.getQuery().getPages().get(0).getRevisions().get(0).getValue();
-        final List<String> allInternalLinksOnPage = getAllInternalLinks(pageText);
-        return new PageLinkInfo(pageName, revisionDate, allInternalLinksOnPage);
+        final Page relevantPageInfo = revisionFromXML.getQuery().getPages().get(0);
+        if (relevantPageInfo.getRevisions() != null) {
+            final Rev relevantRevision = relevantPageInfo.getRevisions().get(0);
+            final String pageText = relevantRevision.getValue();
+            if(StringUtils.isEmpty(pageText)) {// text blank at revision
+                return new PageLinkInfo(pageName, revisionDate, new LinkedList<String>(), relevantPageInfo.getPageid(), relevantRevision.getRevid());
+            } else {
+                final List<String> allInternalLinksOnPage = getAllInternalLinks(pageText);
+                return new PageLinkInfo(pageName, revisionDate, allInternalLinksOnPage, relevantPageInfo.getPageid(), relevantRevision.getRevid());
+            }
+        } else {
+            throw new RuntimeException("Problem while getting revisions from Wikipedia API, URL was: " + url);
+        }
     }
 
     private List<String> getAllInternalLinks(final String pageText) {
@@ -65,9 +83,14 @@ public class PageLinkInfoFetcher {
     private String getURL() {
         final String timestamp = revisionDate.toString(ISODateTimeFormat.dateHourMinuteSecond()) + "Z";
         final String encodedPageName = HTTPUtil.URLEncode(pageName);
+        final String revisionProperties = HTTPUtil.URLEncode("content|ids");
         return "http://" + lang +
         ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles=" + encodedPageName +
-        "&rvlimit=1&rvprop=content&rvstart=" + timestamp;
+        "&rvlimit=1&rvprop=" + revisionProperties + "&rvstart=" + timestamp;
+    }
+
+    public boolean localDataUnavailable() {
+        return dbUtil.localDataForRecordUnavailable(pageId, revisionDate);
     }
 
 

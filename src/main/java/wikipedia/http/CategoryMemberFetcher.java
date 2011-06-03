@@ -1,6 +1,7 @@
 package wikipedia.http;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
@@ -11,7 +12,7 @@ import wikipedia.xml.Api;
 import wikipedia.xml.CategoryMember;
 import wikipedia.xml.XMLTransformer;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class CategoryMemberFetcher {
 
@@ -29,16 +30,16 @@ public class CategoryMemberFetcher {
         this.lang = lang;
     }
 
-    public List<String> getAllPagesInAllCategories() {
-        List<String> allPageTitles = Lists.newArrayList();
+    public Map<Integer, String> getAllPagesInAllCategories() {
+        Map<Integer, String> allPageIDsAndTitles = Maps.newLinkedHashMap();
         for (String categoryName : categoryNames) {
-            allPageTitles.addAll(getAllPagesInSingleCategory(categoryName));
+            allPageIDsAndTitles.putAll(getAllPagesInSingleCategory(categoryName));
         }
-        return allPageTitles;
+        return allPageIDsAndTitles;
     }
 
-    private List<String> getAllPagesInSingleCategory(final String categoryName) {
-        List<String> allPageTitles = Lists.newArrayList();
+    private Map<Integer, String> getAllPagesInSingleCategory(final String categoryName) {
+        Map<Integer, String> allPageTitles = Maps.newLinkedHashMap();
         Api revisionResult = null;
         String queryContinue = "";
         while(true) {
@@ -47,7 +48,7 @@ public class CategoryMemberFetcher {
             final String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
             revisionResult = XMLTransformer.getRevisionFromXML(xmlResponse);
             for (CategoryMember member : revisionResult.getQuery().getCategorymembers()) {
-                allPageTitles.add(member.getTitle());
+                allPageTitles.put(member.getPageid(), member.getTitle());
             }
             if (revisionResult.getQueryContinue() == null) {
                 break;
@@ -63,7 +64,7 @@ public class CategoryMemberFetcher {
         final String encodedqueryContinue = HTTPUtil.URLEncode(queryContinue);
         return "http://" + lang +
         ".wikipedia.org/w/api.php?format=xml&action=query&cmlimit=500&list=categorymembers&cmtitle="
-        + encodedCategoryName + "&cmcontinue=" + encodedqueryContinue;
+        + encodedCategoryName + "&cmnamespace=0&cmcontinue=" + encodedqueryContinue;
     }
 
 }
