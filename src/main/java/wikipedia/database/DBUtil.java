@@ -1,18 +1,28 @@
 package wikipedia.database;
 
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import util.Const;
 import wikipedia.network.PageLinkInfo;
+
+import com.google.common.collect.Lists;
 
 public class DBUtil {
 
     public static final String MYSQL_DATETIME = "YYYY-MM-dd HH:mm:ss";
     public static final DateTimeFormatter MYSQL_DATETIME_FORMATTER = DateTimeFormat.forPattern(MYSQL_DATETIME);
+
+    private final static Logger LOG = LoggerFactory.getLogger(DBUtil.class.getName());
 
     /**
      * SQL Stmts
@@ -81,6 +91,18 @@ public class DBUtil {
             return true;
         }
         return false;
+    }
+
+    public List<String> getAllLinksForRevision(final int pageId, final String dateTime) {
+        try {
+            String allLinksString = jdbcTemplate.queryForObject(
+                    "SELECT revision_links FROM page_revisions WHERE page_id = ? AND revision_timestamp = ?",
+                    String.class, new Object[] {pageId, dateTime});
+            return Lists.newArrayList(StringUtils.split(allLinksString, Const.LINK_SEPARATOR));
+        } catch (EmptyResultDataAccessException e) {
+            LOG.info("NO LINKS! -- PageID : " + pageId + " -- Date: " + dateTime);
+            return Lists.newArrayList();
+        }
     }
 
 }

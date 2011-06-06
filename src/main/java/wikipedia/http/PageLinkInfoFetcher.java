@@ -45,7 +45,7 @@ public class PageLinkInfoFetcher {
 
     public PageLinkInfo getLinkInformation() {
         final String url = getURL();
-        LOG.info("Fetching URL: " + url);
+        LOG.debug("Fetching URL: " + url);
         String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
         Api revisionFromXML = XMLTransformer.getRevisionFromXML(xmlResponse);
         final Page relevantPageInfo = revisionFromXML.getQuery().getPages().get(0);

@@ -5,13 +5,9 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
-public class PageLinkInfo {
+import util.Const;
 
-    /*
-     * According to http://en.wikipedia.org/wiki/Wikipedia:Page_name#Invalid_page_names
-     * the pipe char | is illegal in a page name
-     */
-    private static final String LINK_SEPARATOR = "|";
+public class PageLinkInfo {
 
     private final String pageTitle;
     private final int pageID;
@@ -51,7 +47,7 @@ public class PageLinkInfo {
     }
 
     public String getLinksAsString() {
-        return StringUtils.join(outgoingLinks, LINK_SEPARATOR);
+        return StringUtils.join(outgoingLinks, Const.LINK_SEPARATOR);
     }
 
     public List<String> getLinks() {
