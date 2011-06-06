@@ -21,18 +21,19 @@ import com.google.common.collect.Lists;
 
 public class PageHistoryFetcher {
 
+    private static final int DELTA_MONTHS = 1;
+    private static final int MAX_YEARS = 1;
+
+    private static final int THREAD_SLEEP_MSEC = 1000;
+    private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
+    private static final int NUM_THREADS = 8;
+
     private final static Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
 
-    private static final int MAX_YEARS = 7;
     private final List<DateTime> allRelevantTimeStamps;
     private final DBUtil dataBaseUtil;
 
-    private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
-
-    public ExecutorService getThreadPool() {
-        return threadPool;
-    }
 
     public PageHistoryFetcher(final DBUtil dataBaseUtil) {
         this.dataBaseUtil = dataBaseUtil;
@@ -45,7 +46,7 @@ public class PageHistoryFetcher {
         DateTime earliestDate = latestDate.minusYears(MAX_YEARS).toDateTime();
         while (earliestDate.isBefore(latestDate)) {
             allDatesToFetch.add(earliestDate);
-            earliestDate = earliestDate.plusMonths(1);
+            earliestDate = earliestDate.plusMonths(DELTA_MONTHS);
         }
         return allDatesToFetch;
     }
@@ -65,7 +66,7 @@ public class PageHistoryFetcher {
                 PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang, dateToFetch, dataBaseUtil);
                 if(plif.localDataUnavailable()) {
                     try {
-                        Thread.sleep(1200); // with a poolsize of 8, this should lead to ~7 request pro second
+                        Thread.sleep(THREAD_SLEEP_MSEC); // with a poolsize of 8, this should lead to ~7 request pro second
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -79,7 +80,7 @@ public class PageHistoryFetcher {
     private void shutdownThreadPool() {
         threadPool.shutdown();
         try {
-            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+            threadPool.awaitTermination(THREADPOOL_TERMINATION_WAIT_MINUTES, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             LOG.error("Error while shutting down Threadpool", e);
         }
@@ -90,13 +91,13 @@ public class PageHistoryFetcher {
 
     public static void main(final String[] args) {
         final String lang = "en";
-        long startTime = System.currentTimeMillis();
-        fetchCompleteCategory(lang);
+        new PageHistoryFetcher(new DBUtil()).fetchCompleteCategories(lang);
+        //long startTime = System.currentTimeMillis();
         //fetchSingleArticle("Aja Kim", lang);
-        System.out.println(((System.currentTimeMillis() - startTime)/1000));
+        //System.out.println(((System.currentTimeMillis() - startTime)/1000));
     }
 
-    private static void fetchSingleArticle(final String pageName, final String lang) {
+    /*private static void fetchSingleArticle(final String pageName, final String lang) {
         final PageHistoryFetcher pageHistoryFetcher = new PageHistoryFetcher(new DBUtil());
         final Entry<Integer, String> pageEntry = new Entry<Integer, String>() {
 
@@ -117,21 +118,20 @@ public class PageHistoryFetcher {
         } finally  {
             pageHistoryFetcher.shutdownThreadPool();
         }
-    }
+    }*/
 
-    private static void fetchCompleteCategory(final String lang) {
-        CategoryMemberFetcher cmf = new CategoryMemberFetcher(ImmutableList.of("Category:American_female_singers"), lang);
-        final Map<Integer, String> allPagesInAllCategories = cmf.getAllPagesInAllCategories();
+    private void fetchCompleteCategories(final String lang) {
+        final ImmutableList<String> categories = ImmutableList.of("Category:American_female_singers",
+                                                                  "Category:American_male_singers");
+        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories, lang).getAllPagesInAllCategories();
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
-        final PageHistoryFetcher pageHistoryFetcher = new PageHistoryFetcher(new DBUtil());
-
         try {
             for (final Entry<Integer, String> pageEntry: allPagesInAllCategories.entrySet()) {
-                pageHistoryFetcher.getThreadPool().execute(new ExecutorTask(pageHistoryFetcher, lang, pageEntry, counter++));
+                threadPool.execute(new ExecutorTask(this, lang, pageEntry, counter++));
             }
         } finally  {
-            pageHistoryFetcher.shutdownThreadPool();
+            shutdownThreadPool();
         }
     }
 
