@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import wikipedia.database.DBUtil;
 import wikipedia.http.CategoryMemberFetcher;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -42,17 +41,11 @@ public class NetworkBuilder {
     }
 
     public static void main(final String[] args) {
-        final List<String> categories = ImmutableList.of("Category:American_female_singers",
-                                                                  "Category:American_male_singers",
-                                                                  "Category:English-language_singers",
-                                                                  "Category:1980s_singers",
-                                                                  "Category:1990s_singers",
-                                                                  "Category:2000s_singers",
-                                                                  "Category:2010s_singers");
+
         final String lang = "en";
         final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
 
-        NetworkBuilder nb = new NetworkBuilder(categories, lang, revisionDateTime);
+        NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, revisionDateTime);
         nb.printNetworkData();
     }
 

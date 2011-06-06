@@ -13,10 +13,10 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import wikipedia.analysis.pagenetwork.CategoryLists;
 import wikipedia.database.DBUtil;
 import wikipedia.network.PageLinkInfo;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class PageHistoryFetcher {
@@ -121,15 +121,7 @@ public class PageHistoryFetcher {
     }*/
 
     private void fetchCompleteCategories(final String lang) {
-        final ImmutableList<String> categories = ImmutableList.of("Category:American_female_singers",
-                                                                  "Category:American_male_singers",
-                                                                  "Category:English-language_singers",
-                                                                  "Category:1980s_singers",
-                                                                  "Category:1990s_singers",
-                                                                  "Category:2000s_singers",
-                                                                  "Category:2010s_singers");
-
-        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories, lang).getAllPagesInAllCategories();
+        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, lang).getAllPagesInAllCategories();
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
         try {
