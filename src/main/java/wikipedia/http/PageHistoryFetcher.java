@@ -122,7 +122,13 @@ public class PageHistoryFetcher {
 
     private void fetchCompleteCategories(final String lang) {
         final ImmutableList<String> categories = ImmutableList.of("Category:American_female_singers",
-                                                                  "Category:American_male_singers");
+                                                                  "Category:American_male_singers",
+                                                                  "Category:English-language_singers",
+                                                                  "Category:1980s_singers",
+                                                                  "Category:1990s_singers",
+                                                                  "Category:2000s_singers",
+                                                                  "Category:2010s_singers");
+
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories, lang).getAllPagesInAllCategories();
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;

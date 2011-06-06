@@ -30,6 +30,8 @@ public class NetworkBuilder {
     private final String lang;
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
+    private static final int MIN_INDEGREE = 15;
+
     private static final int NUM_THREADS = 16;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
@@ -40,7 +42,13 @@ public class NetworkBuilder {
     }
 
     public static void main(final String[] args) {
-        final List<String> categories = ImmutableList.of("Category:American_female_singers");
+        final List<String> categories = ImmutableList.of("Category:American_female_singers",
+                                                                  "Category:American_male_singers",
+                                                                  "Category:English-language_singers",
+                                                                  "Category:1980s_singers",
+                                                                  "Category:1990s_singers",
+                                                                  "Category:2000s_singers",
+                                                                  "Category:2010s_singers");
         final String lang = "en";
         final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
 
@@ -67,10 +75,7 @@ public class NetworkBuilder {
             List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
 
             int inDegree = allIncommingLinks.size();
-//            if (inDegree > 10) {
-//                System.out.println(targetPage + " -- " + inDegree);
-//            }
-            if (inDegree < 10) {
+            if (inDegree < MIN_INDEGREE) {
                 continue;
             }
 
@@ -114,10 +119,6 @@ public class NetworkBuilder {
         // In-degree matrix
         for (String to : indegreeMatrix.keySet()) {
             List<String> v = indegreeMatrix.get(to);
-            int degree = v.size();
-//            if (degree < 8) {
-//                continue;
-//            }
             Iterator<String> it2 = v.iterator();
             while (it2.hasNext()) {
 
@@ -138,7 +139,8 @@ public class NetworkBuilder {
 
     private static void writeNode(final List<String> output,
                                   final String name) {
-        output.add("{nodeName: \"" + name + "\", group: 1}");
+        String fixedName = StringUtils.replace(name, "\"", ""); // FIXME will break graph!
+        output.add("{nodeName: \"" + fixedName + "\", group: 1}");
     }
 
     private static void writeEdge(final List<String> output,
@@ -149,7 +151,6 @@ public class NetworkBuilder {
         if(keymap.get(from) != null && keymap.get(to) != null) {
             output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: " + 2 + "}");
         }
-        //System.out.println("{source: \"" + from + "\", target: \"" + to + "\", value: " + 2 + "}");
     }
 
 
@@ -172,26 +173,15 @@ public class NetworkBuilder {
     private Map<String, String> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetwork) {
         final Collection<String> allPageNamesInNetwork = allPagesInNetwork.values();
         final Map<String, String> allLinksInNetwork = Maps.newConcurrentMap();
-
-        for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
-            final int pageId = entry.getKey();
-            final String pageName = entry.getValue();
-
-            threadPool.execute(new Runnable() {
-
-                public void run() {
-                    //LOG.info("Getting Links -- Page: " + pageName + " -- Date: " + revisionDateTime);
-                    List<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
-                    for (String outgoingLink : allOutgoingLinksOnPage) {
-                        if(allPageNamesInNetwork.contains(outgoingLink)) {
-                            allLinksInNetwork.put(pageName, outgoingLink);
-                        }
-                    }
-                }
-            });
-
+        try {
+            for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
+                final int pageId = entry.getKey();
+                final String pageName = entry.getValue();
+                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName, allLinksInNetwork));
+            }
+        } finally {
+            shutdownThreadPool();
         }
-        shutdownThreadPool();
         return allLinksInNetwork;
     }
 
@@ -204,6 +194,31 @@ public class NetworkBuilder {
         }
         while (!threadPool.isTerminated()) {
             // wait for all tasks or timeout
+        }
+    }
+
+    private final class SQLExecutor implements Runnable {
+        private final int pageId;
+        private final Collection<String> allPageNamesInNetwork;
+        private final String pageName;
+        private final Map<String, String> allLinksInNetwork;
+
+        private SQLExecutor(final int pageId, final Collection<String> allPageNamesInNetwork, final String pageName,
+                final Map<String, String> allLinksInNetwork) {
+            this.pageId = pageId;
+            this.allPageNamesInNetwork = allPageNamesInNetwork;
+            this.pageName = pageName;
+            this.allLinksInNetwork = allLinksInNetwork;
+        }
+
+        public void run() {
+            //LOG.info("Getting Links -- Page: " + pageName + " -- Date: " + revisionDateTime);
+            List<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
+            for (String outgoingLink : allOutgoingLinksOnPage) {
+                if(allPageNamesInNetwork.contains(outgoingLink)) {
+                    allLinksInNetwork.put(pageName, outgoingLink);
+                }
+            }
         }
     }
 
