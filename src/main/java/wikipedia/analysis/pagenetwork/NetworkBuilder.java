@@ -31,7 +31,7 @@ public class NetworkBuilder {
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 15;
 
-    private static final int NUM_THREADS = 16;
+    private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public NetworkBuilder(final List<String> categories, final String lang, final String revisionDateTime) {
@@ -41,7 +41,6 @@ public class NetworkBuilder {
     }
 
     public static void main(final String[] args) {
-
         final String lang = "en";
         final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
 
@@ -166,11 +165,13 @@ public class NetworkBuilder {
     private Map<String, String> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetwork) {
         final Collection<String> allPageNamesInNetwork = allPagesInNetwork.values();
         final Map<String, String> allLinksInNetwork = Maps.newConcurrentMap();
+        LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
+        int counter = 1;
         try {
             for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
-                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName, allLinksInNetwork));
+                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName, allLinksInNetwork, counter++));
             }
         } finally {
             shutdownThreadPool();
@@ -195,17 +196,22 @@ public class NetworkBuilder {
         private final Collection<String> allPageNamesInNetwork;
         private final String pageName;
         private final Map<String, String> allLinksInNetwork;
+        private final int counter;
 
         private SQLExecutor(final int pageId, final Collection<String> allPageNamesInNetwork, final String pageName,
-                final Map<String, String> allLinksInNetwork) {
+                final Map<String, String> allLinksInNetwork, final int counter) {
             this.pageId = pageId;
             this.allPageNamesInNetwork = allPageNamesInNetwork;
             this.pageName = pageName;
             this.allLinksInNetwork = allLinksInNetwork;
+            this.counter = counter;
         }
 
         public void run() {
             //LOG.info("Getting Links -- Page: " + pageName + " -- Date: " + revisionDateTime);
+            if (counter % 50 == 0) {
+                LOG.info("Task: " + counter);
+            }
             List<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
             for (String outgoingLink : allOutgoingLinksOnPage) {
                 if(allPageNamesInNetwork.contains(outgoingLink)) {
