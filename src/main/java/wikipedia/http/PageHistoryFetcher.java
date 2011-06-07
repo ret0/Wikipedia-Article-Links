@@ -148,7 +148,9 @@ public class PageHistoryFetcher {
         }
 
         public void run() {
-            LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: " + taskCounter + ")");
+            if(taskCounter % 100 == 0) {
+                LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: " + taskCounter + ")");
+            }
             pageHistoryFetcher.fetchAllRecords(pageEntry.getKey(), pageEntry.getValue(), lang);
         }
     }
