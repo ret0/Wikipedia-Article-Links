@@ -12,6 +12,7 @@ public class CategoryLists {
                                                                         "Category:American_pop_singer-songwriters",
                                                                         "Category:American_pop_singers",
                                                                         "Category:American_rock_singers",
+                                                                        "Category:American_dance_musicians",
                                                                         //------------------
                                                                         "Category:Canadian_singer-songwriters",
                                                                         "Category:Canadian_pop_singers",
@@ -31,6 +32,10 @@ public class CategoryLists {
                                                                         "Category:1990s_singers",
                                                                         "Category:2000s_singers",
                                                                         "Category:2010s_singers",
+                                                                        //------------------
+                                                                        "Category:1990s_rappers",
+                                                                        "Category:2000s_rappers",
+                                                                        "Category:2010s_rappers",
                                                                         //------------------
                                                                         "Category:Grammy_Award_winners",
                                                                         "Category:World_Music_Awards_winners");
