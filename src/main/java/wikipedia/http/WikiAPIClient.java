@@ -105,4 +105,9 @@ public class WikiAPIClient {
         HttpConnectionParams.setConnectionTimeout(httpParams, connectionTimeoutMillis);
         HttpConnectionParams.setSoTimeout(httpParams, socketTimeoutMillis);
     }
+
+    public void releaseRessources() {
+        httpclient.getConnectionManager().closeExpiredConnections();
+
+    }
 }
