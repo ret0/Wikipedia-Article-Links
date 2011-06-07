@@ -8,6 +8,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -32,6 +35,10 @@ public class PageHistoryFetcher {
 
     private final List<DateTime> allRelevantTimeStamps;
     private final DBUtil dataBaseUtil;
+
+    ClientConnectionManager cm = new ThreadSafeClientConnManager();
+    DefaultHttpClient httpClient = new DefaultHttpClient(cm);
+    private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
@@ -63,7 +70,7 @@ public class PageHistoryFetcher {
 
         for (DateTime dateToFetch : allRelevantTimeStamps) {
             if(dateToFetch.isAfter(firstRevisionDate.plusWeeks(1))) { //ignore first week of article, not stable yet
-                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang, dateToFetch, dataBaseUtil);
+                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang, dateToFetch, dataBaseUtil, wikiAPIClient);
                 if(plif.localDataUnavailable()) {
                     try {
                         Thread.sleep(THREAD_SLEEP_MSEC); // with a poolsize of 8, this should lead to ~7 request pro second

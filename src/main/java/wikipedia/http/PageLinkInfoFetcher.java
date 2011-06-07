@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
@@ -26,21 +25,21 @@ public class PageLinkInfoFetcher {
 
     private final static Logger LOG = LoggerFactory.getLogger(PageLinkInfoFetcher.class.getName());
 
-    private final DefaultHttpClient httpclient = new DefaultHttpClient();
-    private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpclient);
-
     private final String lang;
     private final String pageName;
     private final DateTime revisionDate;
     private final int pageId;
     private final DBUtil dbUtil;
 
-    public PageLinkInfoFetcher(final String pageName, final int pageId, final String lang, final DateTime revisionDate, final DBUtil dbUtil) {
+    private final WikiAPIClient wikiAPIClient;
+
+    public PageLinkInfoFetcher(final String pageName, final int pageId, final String lang, final DateTime revisionDate, final DBUtil dbUtil, final WikiAPIClient wikiAPIClient) {
         this.pageName = pageName;
         this.pageId = pageId;
         this.lang = lang;
         this.revisionDate = revisionDate;
         this.dbUtil = dbUtil;
+        this.wikiAPIClient = wikiAPIClient;
     }
 
     public PageLinkInfo getLinkInformation() {
