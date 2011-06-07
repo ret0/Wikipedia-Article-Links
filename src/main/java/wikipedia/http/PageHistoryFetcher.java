@@ -48,7 +48,10 @@ public class PageHistoryFetcher {
         schemeRegistry.register(
                 new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
         cm = new ThreadSafeClientConnManager(schemeRegistry);
-        cm.setMaxTotal(100);
+        // Increase max total connection to 200
+        // Increase default max connection per route to 20
+        cm.setDefaultMaxPerRoute(200);
+        cm.setMaxTotal(500);
         httpClient = new DefaultHttpClient(cm);
 
         this.dataBaseUtil = dataBaseUtil;
