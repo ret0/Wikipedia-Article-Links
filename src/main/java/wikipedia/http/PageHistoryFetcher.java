@@ -8,6 +8,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.joda.time.DateMidnight;
@@ -35,13 +38,18 @@ public class PageHistoryFetcher {
     private final List<DateTime> allRelevantTimeStamps;
     private final DBUtil dataBaseUtil;
 
-    ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager();
-    private final DefaultHttpClient httpClient = new DefaultHttpClient(cm);
+    ThreadSafeClientConnManager cm;
+    private final DefaultHttpClient httpClient;
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public PageHistoryFetcher(final DBUtil dataBaseUtil) {
+        SchemeRegistry schemeRegistry = new SchemeRegistry();
+        schemeRegistry.register(
+                new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+        cm = new ThreadSafeClientConnManager(schemeRegistry);
         cm.setMaxTotal(100);
+        httpClient = new DefaultHttpClient(cm);
 
         this.dataBaseUtil = dataBaseUtil;
         DateMidnight startDate = new DateMidnight(2011, 6, 1);

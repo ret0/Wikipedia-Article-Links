@@ -57,10 +57,14 @@ public class WikiAPIClient {
             HttpEntity entity = response.getEntity();
 
             if (entity != null) {
-                InputStream content = entity.getContent();
-                final String contentString = IOUtils.toString(content);
-                content.close();
-                return contentString; //XXX try catch!
+                InputStream content = null;
+                try {
+                    content = entity.getContent();
+                    final String contentString = IOUtils.toString(content);
+                    return contentString;
+                } finally {
+                    content.close();
+                }
             }
         } catch (SocketTimeoutException e) {
             LOG.error("Timeout!", e);
@@ -110,8 +114,4 @@ public class WikiAPIClient {
         HttpConnectionParams.setSoTimeout(httpParams, socketTimeoutMillis);
     }
 
-    public void releaseRessources() {
-        httpclient.getConnectionManager().closeExpiredConnections();
-
-    }
 }
