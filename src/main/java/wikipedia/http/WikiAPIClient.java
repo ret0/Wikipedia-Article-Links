@@ -53,19 +53,21 @@ public class WikiAPIClient {
             HttpGet httpget = new HttpGet(url);
             httpget.setHeader("User-Agent", Const.USER_AGENT);
             LOG.debug("executing request " + httpget.getURI());
-            HttpResponse response = httpclient.execute(httpget);
-            HttpEntity entity = response.getEntity();
-
-            if (entity != null) {
-                InputStream content = null;
-                try {
-                    content = entity.getContent();
-                    final String contentString = IOUtils.toString(content);
-                    return contentString;
-                } finally {
-                    content.close();
+            synchronized (httpclient) {
+                HttpResponse response = httpclient.execute(httpget);
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    InputStream content = null;
+                    try {
+                        content = entity.getContent();
+                        final String contentString = IOUtils.toString(content);
+                        return contentString;
+                    } finally {
+                        content.close();
+                    }
                 }
             }
+
         } catch (SocketTimeoutException e) {
             LOG.error("Timeout!", e);
         } catch (ClientProtocolException e) {
