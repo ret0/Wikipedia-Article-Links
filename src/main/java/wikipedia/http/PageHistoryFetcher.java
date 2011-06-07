@@ -26,7 +26,7 @@ public class PageHistoryFetcher {
 
     private static final int THREAD_SLEEP_MSEC = 1000;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
-    private static final int NUM_THREADS = 32;
+    private static final int NUM_THREADS = 10;
 
     private final static Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
 

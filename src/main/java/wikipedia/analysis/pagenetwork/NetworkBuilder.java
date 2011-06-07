@@ -1,5 +1,7 @@
 package wikipedia.analysis.pagenetwork;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
@@ -31,7 +34,7 @@ public class NetworkBuilder {
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 15;
 
-    private static final int NUM_THREADS = 8;
+    private static final int NUM_THREADS = 16;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public NetworkBuilder(final List<String> categories, final String lang, final String revisionDateTime) {
@@ -126,7 +129,13 @@ public class NetworkBuilder {
 
         output.add(StringUtils.join(edgeOutput, ", \n"));
         output.add("] };");
-        System.out.println(StringUtils.join(output, "\n"));
+        try {
+            FileUtils.writeLines(new File("out/bla.txt"), output);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        //System.out.println(StringUtils.join(output, "\n"));
     }
 
     private static void writeNode(final List<String> output,
