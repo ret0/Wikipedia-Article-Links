@@ -19,6 +19,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,21 +54,20 @@ public class WikiAPIClient {
             HttpGet httpget = new HttpGet(url);
             httpget.setHeader("User-Agent", Const.USER_AGENT);
             LOG.debug("executing request " + httpget.getURI());
-            synchronized (httpclient) {
-                HttpResponse response = httpclient.execute(httpget);
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    InputStream content = null;
-                    try {
-                        content = entity.getContent();
-                        final String contentString = IOUtils.toString(content);
-                        return contentString;
-                    } finally {
-                        content.close();
-                    }
+            HttpContext localContext = new BasicHttpContext();
+            HttpResponse response = httpclient.execute(httpget, localContext);
+            HttpEntity entity = response.getEntity();
+
+            if (entity != null) {
+                InputStream content = null;
+                try {
+                    content = entity.getContent();
+                    final String contentString = IOUtils.toString(content);
+                    return contentString;
+                } finally {
+                    content.close();
                 }
             }
-
         } catch (SocketTimeoutException e) {
             LOG.error("Timeout!", e);
         } catch (ClientProtocolException e) {
