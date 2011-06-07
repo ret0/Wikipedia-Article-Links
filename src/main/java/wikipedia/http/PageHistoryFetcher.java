@@ -38,10 +38,11 @@ public class PageHistoryFetcher {
     ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager();
     private final DefaultHttpClient httpClient = new DefaultHttpClient(cm);
 
-
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public PageHistoryFetcher(final DBUtil dataBaseUtil) {
+        cm.setMaxTotal(100);
+
         this.dataBaseUtil = dataBaseUtil;
         DateMidnight startDate = new DateMidnight(2011, 6, 1);
         allRelevantTimeStamps = getAllDatesForHistory(startDate);
@@ -137,6 +138,7 @@ public class PageHistoryFetcher {
             }
         } finally  {
             shutdownThreadPool();
+            httpClient.getConnectionManager().shutdown();
         }
     }
 
