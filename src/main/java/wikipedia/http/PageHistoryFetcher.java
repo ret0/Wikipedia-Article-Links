@@ -37,8 +37,7 @@ public class PageHistoryFetcher {
     private final DBUtil dataBaseUtil;
 
     ClientConnectionManager cm = new ThreadSafeClientConnManager();
-    DefaultHttpClient httpClient = new DefaultHttpClient(cm);
-    private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
+    private final WikiAPIClient wikiAPIClient = new WikiAPIClient(new DefaultHttpClient(cm));
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 

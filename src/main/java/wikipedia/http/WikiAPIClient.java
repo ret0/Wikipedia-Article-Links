@@ -1,8 +1,10 @@
 package wikipedia.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketTimeoutException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
@@ -18,7 +20,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,10 @@ public class WikiAPIClient {
             HttpEntity entity = response.getEntity();
 
             if (entity != null) {
-                return EntityUtils.toString(entity);
+                InputStream content = entity.getContent();
+                final String contentString = IOUtils.toString(content);
+                content.close();
+                return contentString; //XXX try catch!
             }
         } catch (SocketTimeoutException e) {
             LOG.error("Timeout!", e);
