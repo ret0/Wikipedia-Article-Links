@@ -1,6 +1,5 @@
 package wikipedia.http;
 
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,15 +12,18 @@ public class FirstRevisionFetcher {
 
     private final static Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
 
-    private final DefaultHttpClient httpclient = new DefaultHttpClient();
-    private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpclient);
+    //private final DefaultHttpClient httpclient = new DefaultHttpClient();
+    //private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpclient);
 
     private final String pageTitle;
     private final String lang;
 
-    public FirstRevisionFetcher(final String pageTitle, final String lang) {
+    private final WikiAPIClient wikiAPIClient;
+
+    public FirstRevisionFetcher(final String pageTitle, final String lang, final WikiAPIClient wikiAPIClient) {
         this.lang = lang;
         this.pageTitle = pageTitle;
+        this.wikiAPIClient = wikiAPIClient;
     }
 
     public DateTime getFirstRevisionDate() {
