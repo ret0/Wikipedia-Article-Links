@@ -26,6 +26,38 @@ import com.google.common.collect.Lists;
 
 public class DBMigration {
 
+    private static final class SQLWorker implements Runnable {
+        private final List<DateTime> allDatesForHistory;
+        private final Entry<Integer, String> entry;
+        private final DBMigration dbm;
+        private final int counter;
+
+        private SQLWorker(final List<DateTime> allDatesForHistory, final Entry<Integer, String> entry,
+                final DBMigration dbm, final int counter) {
+            this.allDatesForHistory = allDatesForHistory;
+            this.entry = entry;
+            this.dbm = dbm;
+            this.counter = counter;
+        }
+
+        public void run() {
+            LOG.info("Work: " + entry.getValue() + " Counter: " + counter);
+            for (final DateTime datetime : allDatesForHistory) {
+                final String revisionDateTime = datetime
+                        .toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+                final Integer pageID = entry.getKey();
+                List<String> allLinksForRevision = dbm.getAllLinksForRevision(pageID,
+                        revisionDateTime);
+                for (String outgoingLink : allLinksForRevision) {
+                    if (!StringUtils.startsWith(outgoingLink, "File:")) {
+                        dbm.storeOutgoingLink(pageID, outgoingLink, revisionDateTime);
+                    }
+                }
+            }
+
+        }
+    }
+
     public static final String MYSQL_DATETIME = "YYYY-MM-dd HH:mm:ss";
     public static final DateTimeFormatter MYSQL_DATETIME_FORMATTER = DateTimeFormat
             .forPattern(MYSQL_DATETIME);
@@ -75,26 +107,10 @@ public class DBMigration {
 
         ExecutorService threadPool = Executors.newFixedThreadPool(16);
 
+        LOG.info("Total Tasks: " + allPagesInAllCategories.size());
+        int counter = 1;
         for (final Entry<Integer, String> entry : allPagesInAllCategories.entrySet()) {
-            threadPool.execute(new Runnable() {
-                public void run() {
-
-                    for (final DateTime datetime : allDatesForHistory) {
-                        final String revisionDateTime = datetime
-                                .toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-                        LOG.info("Work: " + entry.getValue());
-                        final Integer pageID = entry.getKey();
-                        List<String> allLinksForRevision = dbm.getAllLinksForRevision(pageID,
-                                revisionDateTime);
-                        for (String outgoingLink : allLinksForRevision) {
-                            if (!StringUtils.startsWith(outgoingLink, "File:")) {
-                                dbm.storeOutgoingLink(pageID, outgoingLink, revisionDateTime);
-                            }
-                        }
-                    }
-
-                }
-            });
+            threadPool.execute(new SQLWorker(allDatesForHistory, entry, dbm, counter++));
         }
 
     }
