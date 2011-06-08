@@ -8,6 +8,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -52,6 +54,9 @@ public class PageHistoryFetcher {
         // Increase default max connection per route to 20
         cm.setDefaultMaxPerRoute(200);
         cm.setMaxTotal(500);
+     // Increase max connections for localhost:80 to 50
+        HttpHost wiki = new HttpHost("en.wikipedia.org", 80);
+        cm.setMaxForRoute(new HttpRoute(wiki), 50);
         httpClient = new DefaultHttpClient(cm);
 
         this.dataBaseUtil = dataBaseUtil;
