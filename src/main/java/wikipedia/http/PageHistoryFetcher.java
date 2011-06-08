@@ -63,7 +63,12 @@ public class PageHistoryFetcher {
         DateTime firstRevisionDate;
         if(StringUtils.isEmpty(storedCreationDate)) {
             final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
-            firstRevisionDate = new FirstRevisionFetcher(pageTitle, lang, wikiAPIClient).getFirstRevisionDate();
+            try {
+                firstRevisionDate = new FirstRevisionFetcher(pageTitle, lang, wikiAPIClient).getFirstRevisionDate();
+            } catch (Exception e) {
+                LOG.error("Error while fetching first revision date for: " + pageTitle);
+                return;
+            }
         } else {
             firstRevisionDate = DBUtil.MYSQL_DATETIME_FORMATTER.parseDateTime(StringUtils.removeEnd(storedCreationDate, ".0") );
         }
