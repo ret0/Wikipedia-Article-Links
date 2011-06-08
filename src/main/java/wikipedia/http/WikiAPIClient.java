@@ -56,9 +56,7 @@ public class WikiAPIClient {
             HttpResponse response = this.httpclient.execute(httpget, context);
             HttpEntity entity = response.getEntity();
             if (entity != null) {
-                final String contentString = IOUtils.toString(entity.getContent());
-                EntityUtils.consume(entity);
-                return contentString;
+                return IOUtils.toString(entity.getContent());
             }
             // ensure the connection gets released to the manager
             EntityUtils.consume(entity);
