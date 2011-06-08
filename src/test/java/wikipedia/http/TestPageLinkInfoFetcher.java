@@ -17,9 +17,9 @@ public class TestPageLinkInfoFetcher {
 
     @Test
     public void getFirstDate() {
-        FirstRevisionFetcher frf = new FirstRevisionFetcher("en", "Barack Obama");
-        System.out.println(frf.getFirstRevisionDate());
-        FirstRevisionFetcher frf2 = new FirstRevisionFetcher("en", "Måns Zelmerlöw");
-        System.out.println(frf2.getFirstRevisionDate());
+//        FirstRevisionFetcher frf = new FirstRevisionFetcher("en", "Barack Obama");
+//        System.out.println(frf.getFirstRevisionDate());
+//        FirstRevisionFetcher frf2 = new FirstRevisionFetcher("en", "Måns Zelmerlöw");
+//        System.out.println(frf2.getFirstRevisionDate());
     }
 }
