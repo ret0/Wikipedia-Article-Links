@@ -21,6 +21,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
 import util.Const;
+import wikipedia.analysis.pagenetwork.CategoryLists;
 import wikipedia.http.CategoryMemberFetcher;
 
 import com.google.common.collect.Lists;
@@ -102,8 +103,8 @@ public class DBMigration {
     }
 
     private void migrate() {
-        List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners", "Category:2010s_rappers");
-        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories,
+        //List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners", "Category:2010s_rappers");
+        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC,
                 "en").getAllPagesInAllCategories();
         DateMidnight startDate = new DateMidnight(2011, 6, 1);
         final List<DateTime> allDatesForHistory = getAllDatesForHistory(startDate);
