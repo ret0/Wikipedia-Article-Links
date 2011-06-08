@@ -19,7 +19,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,9 +52,8 @@ public class WikiAPIClient {
         try {
             HttpGet httpget = new HttpGet(url);
             httpget.setHeader("User-Agent", Const.USER_AGENT);
-            LOG.debug("executing request " + httpget.getURI());
-            HttpContext localContext = new BasicHttpContext();
-            HttpResponse response = httpclient.execute(httpget, localContext);
+            LOG.info("executing request " + httpget.getURI());
+            HttpResponse response = httpclient.execute(httpget);
             HttpEntity entity = response.getEntity();
 
             if (entity != null) {
