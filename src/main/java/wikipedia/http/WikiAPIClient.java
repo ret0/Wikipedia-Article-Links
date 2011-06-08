@@ -62,11 +62,11 @@ public class WikiAPIClient {
                 try {
                     content = entity.getContent();
                     final String contentString = IOUtils.toString(content);
+                    EntityUtils.consume(entity);
                     return contentString;
                 } finally {
                  // ensure the connection gets released to the manager
-                    EntityUtils.consume(entity);
-                    content.close();
+                    //content.close();
                 }
             }
         } catch (SocketTimeoutException e) {
