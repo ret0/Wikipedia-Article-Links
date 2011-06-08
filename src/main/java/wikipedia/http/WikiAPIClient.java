@@ -20,6 +20,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,8 @@ public class WikiAPIClient {
                     final String contentString = IOUtils.toString(content);
                     return contentString;
                 } finally {
+                 // ensure the connection gets released to the manager
+                    EntityUtils.consume(entity);
                     content.close();
                 }
             }
