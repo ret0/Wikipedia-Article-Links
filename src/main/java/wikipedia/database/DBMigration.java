@@ -39,7 +39,7 @@ public class DBMigration {
         }
 
         public void run() {
-            LOG.info("Work: " + entry.getValue() + " Counter: " + counter);
+            LOG.info("Work: " + entry.getValue() + " - Counter: " + counter);
             for (final DateTime datetime : allDatesForHistory) {
                 final String revisionDateTime = datetime
                         .toString(DBUtil.MYSQL_DATETIME_FORMATTER);
