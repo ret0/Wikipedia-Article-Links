@@ -1,7 +1,6 @@
 package wikipedia.http;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -27,7 +26,7 @@ import util.Const;
 
 public class WikiAPIClient {
 
-    private static final int HTTP_TIMEOUT = 15000; //milisec
+    private static final int HTTP_TIMEOUT = 15000; // milisec
     private static final Logger LOG = LoggerFactory.getLogger(WikiAPIClient.class.getName());
 
     private final DefaultHttpClient httpclient;
@@ -38,60 +37,35 @@ public class WikiAPIClient {
     public WikiAPIClient(final DefaultHttpClient httpclient, final boolean enableGzip) {
         this.httpclient = httpclient;
         setHTTPClientTimeouts(httpclient);
-        if(enableGzip) {
+        if (enableGzip) {
             addGzipRequestInterceptor(httpclient);
             addGzipResponseInterceptor(httpclient);
         }
     }
 
     public WikiAPIClient(final DefaultHttpClient httpclient) {
-        this(httpclient, false);
+        this(httpclient, true);
     }
 
     public String executeHTTPRequest(final String url) {
-       // try {
-            HttpGet httpget = new HttpGet(url);
-            httpget.setHeader("User-Agent", Const.USER_AGENT);
-            LOG.info("executing request " + httpget.getURI());
-            //HttpResponse response = httpclient.execute(httpget);
-            //HttpEntity entity = response.getEntity();
-
-            /*if (entity != null) {
-                InputStream content = null;
-                try {
-                    content = entity.getContent();
-                    final String contentString = IOUtils.toString(content);
-                    EntityUtils.consume(entity);
-                    return contentString;
-                } finally {
-                 // ensure the connection gets released to the manager
-                    //content.close();
-                }
-            }*/
-            BasicHttpContext context = new BasicHttpContext();
-            try {
-                HttpResponse response = this.httpclient.execute(httpget, context);
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    // do something useful with the entity
-                    InputStream content = entity.getContent();
-                    final String contentString = IOUtils.toString(content);
-                    EntityUtils.consume(entity);
-                    return contentString;
-                }
-                // ensure the connection gets released to the manager
+        HttpGet httpget = new HttpGet(url);
+        httpget.setHeader("User-Agent", Const.USER_AGENT);
+        LOG.info("executing request " + httpget.getURI());
+        BasicHttpContext context = new BasicHttpContext();
+        try {
+            HttpResponse response = this.httpclient.execute(httpget, context);
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                final String contentString = IOUtils.toString(entity.getContent());
                 EntityUtils.consume(entity);
-            } catch (Exception ex) {
-                httpget.abort();
-                LOG.error("Abort!", ex);
+                return contentString;
             }
-            /*} catch (SocketTimeoutException e) {
-            LOG.error("Timeout!", e);
-        } catch (ClientProtocolException e) {
-            LOG.error("ClientProtocolException", e);
-        } catch (IOException e) {
-            LOG.error("IOException", e);
-        }*/
+            // ensure the connection gets released to the manager
+            EntityUtils.consume(entity);
+        } catch (Exception ex) {
+            httpget.abort();
+            LOG.error("HTTP Abort!", ex);
+        }
         LOG.error("Problem while executing request, URL was: " + url);
         return "";
     }

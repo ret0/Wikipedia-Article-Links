@@ -8,11 +8,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.joda.time.DateMidnight;
@@ -31,9 +26,9 @@ public class PageHistoryFetcher {
     private static final int DELTA_MONTHS = 1;
     private static final int MAX_YEARS = 1;
 
-    private static final int THREAD_SLEEP_MSEC = 1000;
+    private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
-    private static final int NUM_THREADS = 10;
+    private static final int NUM_THREADS = 8;
 
     private final static Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
 
@@ -46,19 +41,7 @@ public class PageHistoryFetcher {
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public PageHistoryFetcher(final DBUtil dataBaseUtil) {
-        SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(
-                new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-        cm = new ThreadSafeClientConnManager(schemeRegistry);
-        // Increase max total connection to 200
-        // Increase default max connection per route to 20
-        cm.setDefaultMaxPerRoute(200);
-        cm.setMaxTotal(500);
-     // Increase max connections for localhost:80 to 50
-        HttpHost wiki = new HttpHost("en.wikipedia.org", 80);
-        cm.setMaxForRoute(new HttpRoute(wiki), 50);
-        httpClient = new DefaultHttpClient(cm);
-
+        httpClient = new DefaultHttpClient(new ThreadSafeClientConnManager());
         this.dataBaseUtil = dataBaseUtil;
         DateMidnight startDate = new DateMidnight(2011, 6, 1);
         allRelevantTimeStamps = getAllDatesForHistory(startDate);
