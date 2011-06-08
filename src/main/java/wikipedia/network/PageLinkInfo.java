@@ -21,7 +21,6 @@ public class PageLinkInfo {
         this.outgoingLinks = outgoingLinks;
         this.pageID = pageID;
         this.revisionID = revisionID;
-
     }
 
     @Override

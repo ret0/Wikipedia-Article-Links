@@ -38,36 +38,10 @@ public class DBUtil {
 
     private final SimpleJdbcTemplate jdbcTemplate;
 
-    //private final PoolingDataSource dataSource;
-
     public DBUtil() {
-        XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource(
-        "context.xml"));
-        final BasicDataSource dataSource = (BasicDataSource) beanFactory.getBean("dataSource");
-        //dataSource = prepareDataSource();
-        jdbcTemplate = new SimpleJdbcTemplate(dataSource);
+        XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("context.xml"));
+        jdbcTemplate = new SimpleJdbcTemplate((BasicDataSource) beanFactory.getBean("dataSource"));
     }
-
-//    private static PoolingDataSource prepareDataSource() {
-// First, we'll need a ObjectPool that serves as the
-// actual pool of connections.
-//
-// We'll use a GenericObjectPool instance, although
-// any ObjectPool implementation will suffice.
-//
-//        ObjectPool connectionPool = new GenericObjectPool(null);
-//
-//        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/page_link_revisions",null);
-//        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
-//        PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
-//        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-//        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-//        dataSource.setUrl("");
-//        dataSource.setUsername("wikiCache");
-//        dataSource.setPassword("cache");
-//        //dataSource.setConnectionProperties(Properties)
-//        return dataSource;
-//    }
 
     public void storePageLinkInfo(final PageLinkInfo pliToBeStored, final DateTime firstRevisionDate) {
         //if page entry already there, only store revision
@@ -115,8 +89,8 @@ public class DBUtil {
     public List<String> getAllLinksForRevision(final int pageId, final String dateTime) {
         try {
             String allLinksString = jdbcTemplate.queryForObject(
-                    "SELECT revision_links FROM page_revisions WHERE page_id = ? AND revision_timestamp = ?",
-                    String.class, new Object[] {pageId, dateTime});
+                    "SELECT revision_links FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?",
+                    String.class, new Object[] {dateTime, pageId});
             return Lists.newArrayList(StringUtils.split(allLinksString, Const.LINK_SEPARATOR));
         } catch (EmptyResultDataAccessException e) {
             LOG.info("NO LINKS! -- PageID : " + pageId + " -- Date: " + dateTime);
