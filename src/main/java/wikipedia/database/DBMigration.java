@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
@@ -26,17 +27,14 @@ import com.google.common.collect.Lists;
 
 public class DBMigration {
 
-    private static final class SQLWorker implements Runnable {
+    private final class SQLWorker implements Runnable {
         private final List<DateTime> allDatesForHistory;
         private final Entry<Integer, String> entry;
-        private final DBMigration dbm;
         private final int counter;
 
-        private SQLWorker(final List<DateTime> allDatesForHistory, final Entry<Integer, String> entry,
-                final DBMigration dbm, final int counter) {
+        private SQLWorker(final List<DateTime> allDatesForHistory, final Entry<Integer, String> entry, final int counter) {
             this.allDatesForHistory = allDatesForHistory;
             this.entry = entry;
-            this.dbm = dbm;
             this.counter = counter;
         }
 
@@ -46,11 +44,11 @@ public class DBMigration {
                 final String revisionDateTime = datetime
                         .toString(DBUtil.MYSQL_DATETIME_FORMATTER);
                 final Integer pageID = entry.getKey();
-                List<String> allLinksForRevision = dbm.getAllLinksForRevision(pageID,
+                List<String> allLinksForRevision = getAllLinksForRevision(pageID,
                         revisionDateTime);
                 for (String outgoingLink : allLinksForRevision) {
                     if (!StringUtils.startsWith(outgoingLink, "File:")) {
-                        dbm.storeOutgoingLink(pageID, outgoingLink, revisionDateTime);
+                        storeOutgoingLink(pageID, outgoingLink, revisionDateTime);
                     }
                 }
             }
@@ -67,6 +65,7 @@ public class DBMigration {
     private static final int MAX_YEARS = 1;
 
     private final SimpleJdbcTemplate jdbcTemplate;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(16);
 
     public DBMigration() {
         XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("context.xml"));
@@ -99,21 +98,36 @@ public class DBMigration {
 
     public static void main(final String[] args) {
         final DBMigration dbm = new DBMigration();
-        List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners");
+        dbm.migrate();
+    }
+
+    private void migrate() {
+        List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners, Category:2010s_rappers");
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories,
                 "en").getAllPagesInAllCategories();
         DateMidnight startDate = new DateMidnight(2011, 6, 1);
-        final List<DateTime> allDatesForHistory = dbm.getAllDatesForHistory(startDate);
-
-        ExecutorService threadPool = Executors.newFixedThreadPool(16);
+        final List<DateTime> allDatesForHistory = getAllDatesForHistory(startDate);
 
         LOG.info("Total Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
         for (final Entry<Integer, String> entry : allPagesInAllCategories.entrySet()) {
-            threadPool.execute(new SQLWorker(allDatesForHistory, entry, dbm, counter++));
+            threadPool.execute(new SQLWorker(allDatesForHistory, entry, counter++));
         }
-
+        shutdownThreadPool();
     }
+
+    private void shutdownThreadPool() {
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            LOG.error("Error while shutting down Threadpool", e);
+        }
+        while (!threadPool.isTerminated()) {
+            // wait for all tasks or timeout
+        }
+    }
+
 
     private void storeOutgoingLink(final Integer pageID,
                                    final String outgoingLink,
