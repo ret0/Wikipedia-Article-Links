@@ -2,15 +2,17 @@ package wikipedia.database;
 
 import java.util.List;
 
+import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import util.Const;
 import wikipedia.network.PageLinkInfo;
@@ -36,19 +38,36 @@ public class DBUtil {
 
     private final SimpleJdbcTemplate jdbcTemplate;
 
+    //private final PoolingDataSource dataSource;
+
     public DBUtil() {
-        DriverManagerDataSource dataSource = prepareDataSource();
+        XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource(
+        "context.xml"));
+        final BasicDataSource dataSource = (BasicDataSource) beanFactory.getBean("dataSource");
+        //dataSource = prepareDataSource();
         jdbcTemplate = new SimpleJdbcTemplate(dataSource);
     }
 
-    private static DriverManagerDataSource prepareDataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/page_link_revisions");
-        dataSource.setUsername("wikiCache");
-        dataSource.setPassword("cache");
-        return dataSource;
-    }
+//    private static PoolingDataSource prepareDataSource() {
+// First, we'll need a ObjectPool that serves as the
+// actual pool of connections.
+//
+// We'll use a GenericObjectPool instance, although
+// any ObjectPool implementation will suffice.
+//
+//        ObjectPool connectionPool = new GenericObjectPool(null);
+//
+//        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/page_link_revisions",null);
+//        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory,connectionPool,null,null,false,true);
+//        PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
+//        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+//        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+//        dataSource.setUrl("");
+//        dataSource.setUsername("wikiCache");
+//        dataSource.setPassword("cache");
+//        //dataSource.setConnectionProperties(Properties)
+//        return dataSource;
+//    }
 
     public void storePageLinkInfo(final PageLinkInfo pliToBeStored, final DateTime firstRevisionDate) {
         //if page entry already there, only store revision
