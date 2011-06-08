@@ -102,7 +102,7 @@ public class DBMigration {
     }
 
     private void migrate() {
-        List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners, Category:2010s_rappers");
+        List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners", "Category:2010s_rappers");
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(categories,
                 "en").getAllPagesInAllCategories();
         DateMidnight startDate = new DateMidnight(2011, 6, 1);
