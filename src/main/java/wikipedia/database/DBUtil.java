@@ -63,8 +63,14 @@ public class DBUtil {
                 jdbcTemplate.queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
                         new Object[] {outgoingLink, timeStamp, pliToBeStored.getPageID()});
             } catch (EmptyResultDataAccessException e) {
-                jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
-                        new Object[] {pliToBeStored.getPageID(), outgoingLink, timeStamp});
+                try {
+                    jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
+                            new Object[] {pliToBeStored.getPageID(), outgoingLink, timeStamp});
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    LOG.error("title was: " + outgoingLink);
+                    e1.printStackTrace();
+                }
             }
         }
 
