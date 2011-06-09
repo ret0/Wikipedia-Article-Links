@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
 import wikipedia.network.PageLinkInfo;
@@ -61,9 +60,9 @@ public class DBUtil {
 
         for (String outgoingLink : pliToBeStored.getLinks()) {
             try {
-                jdbcTemplate.queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ?",
-                        new Object[] {outgoingLink, timeStamp});
-            } catch (IncorrectResultSizeDataAccessException e) {
+                jdbcTemplate.queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
+                        new Object[] {outgoingLink, timeStamp, pliToBeStored.getPageID()});
+            } catch (EmptyResultDataAccessException e) {
                 jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
                         new Object[] {pliToBeStored.getPageID(), outgoingLink, timeStamp});
             }
