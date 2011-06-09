@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
+import wikipedia.database.DBUtil;
 import wikipedia.xml.Api;
 import wikipedia.xml.CategoryMember;
 import wikipedia.xml.XMLTransformer;
@@ -24,10 +25,13 @@ public class CategoryMemberFetcher {
     private final List<String> categoryNames;
     private final String lang;
 
+    private final DBUtil database;
 
-    public CategoryMemberFetcher(final List<String> categoryNames, final String lang) {
+
+    public CategoryMemberFetcher(final List<String> categoryNames, final String lang, final DBUtil database) {
         this.categoryNames = categoryNames;
         this.lang = lang;
+        this.database = database;
     }
 
     public Map<Integer, String> getAllPagesInAllCategories() {
@@ -39,6 +43,26 @@ public class CategoryMemberFetcher {
     }
 
     private Map<Integer, String> getAllPagesInSingleCategory(final String categoryName) {
+        if(categoryMembersInCache(categoryName)) {
+            return getMembersFromDBCache(categoryName);
+        } else {
+            final Map<Integer, String> allPageTitles = downloadCategoryMembers(categoryName);
+            //database.storeAllCategoryMemberPages(categoryName, allPageTitles);
+            return allPageTitles;
+        }
+    }
+
+    private boolean categoryMembersInCache(final String categoryName) {
+        //return database.categoryMembersInCache(categoryName);
+        return false;
+    }
+
+    private Map<Integer, String> getMembersFromDBCache(final String categoryName) {
+        //return datebase;
+        return Maps.newHashMap();
+    }
+
+    private Map<Integer, String> downloadCategoryMembers(final String categoryName) {
         Map<Integer, String> allPageTitles = Maps.newLinkedHashMap();
         Api revisionResult = null;
         String queryContinue = "";

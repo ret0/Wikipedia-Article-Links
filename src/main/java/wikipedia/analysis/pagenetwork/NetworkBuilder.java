@@ -57,7 +57,7 @@ public class NetworkBuilder {
     }
 
     private void printNetworkData() {
-        Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang)
+        Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
                 .getAllPagesInAllCategories();
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         printNodeAndLinkInfo(allLinksInNetwork);
@@ -65,46 +65,24 @@ public class NetworkBuilder {
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-        List<String> output = Lists.<String> newArrayList();
-
-        int count = 0;
-
         Map<Integer, String> map = new TreeMap<Integer, String>();
         Map<String, Integer> keymap = new TreeMap<String, Integer>();
-
+        int count = 0;
         for (String targetPage : indegreeMatrix.keySet()) {
             List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
-
             int inDegree = allIncommingLinks.size();
             if (inDegree < MIN_INDEGREE) {
                 continue;
             }
-            System.out.println(targetPage + "=" + inDegree);
             if (!keymap.containsKey(targetPage)) {
                 keymap.put(targetPage, count);
                 map.put(count, targetPage);
                 count++;
             }
-
-            /*Iterator<String> it2 = allIncommingLinks.iterator();
-            while (it2.hasNext()) {
-                String to = it2.next();
-
-                if (!keymap.containsKey(to)) {
-                    keymap.put(to, count);
-                    map.put(count, to);
-                    count++;
-                }
-            }*/
         }
 
-//        try {
-//            FileUtils.writeLines(new File("out/excelmap.txt"), keymap.entrySet());
-//        } catch (IOException e1) {
-//            // TODO Auto-generated catch block
-//            e1.printStackTrace();
-//        }
 
+        List<String> output = Lists.<String> newArrayList();
         List<String> nodeOutput = Lists.newArrayList();
         output.add("var initialGraph = {");
         output.add("nodes: [");

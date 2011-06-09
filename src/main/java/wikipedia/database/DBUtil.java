@@ -3,6 +3,7 @@ package wikipedia.database;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.joda.time.DateTime;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
 import wikipedia.network.PageLinkInfo;
@@ -57,12 +59,22 @@ public class DBUtil {
                     new Object[] { pliToBeStored.getPageID(), pliToBeStored.getPageTitle(), firstRevisionDateTime });
         }
 
-        int numberOfRevisionEntries = jdbcTemplate.queryForInt(SELECT_REVISION_COUNT, new Object[] {timeStamp, pliToBeStored.getPageID()});
+        for (String outgoingLink : pliToBeStored.getLinks()) {
+            try {
+                jdbcTemplate.queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ?",
+                        new Object[] {outgoingLink, timeStamp});
+            } catch (IncorrectResultSizeDataAccessException e) {
+                jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
+                        new Object[] {pliToBeStored.getPageID(), outgoingLink, timeStamp});
+            }
+        }
+
+        /*int numberOfRevisionEntries = jdbcTemplate.queryForInt(SELECT_REVISION_COUNT, new Object[] {timeStamp, pliToBeStored.getPageID()});
 
         if(numberOfRevisionEntries == 0) {
             jdbcTemplate.update(INSERT_REVISION_STMT, new Object[] { pliToBeStored.getRevisionID(),
                     timeStamp, pliToBeStored.getPageID(), pliToBeStored.getLinksAsString() });
-        }
+        }*/
 
     }
 
@@ -78,14 +90,10 @@ public class DBUtil {
 
     public boolean localDataForRecordUnavailable(final int pageId,
                                                  final DateTime revisionDate) {
-        try {
-            jdbcTemplate.queryForInt("SELECT page_id FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?",
+            int numRows = jdbcTemplate.queryForInt("SELECT COUNT(0) FROM outgoing_links WHERE revision_date = ? AND src_page_id = ?",
                     new Object[] {revisionDate.toString(
                             DateTimeFormat.forPattern(DBUtil.MYSQL_DATETIME)), pageId});
-        } catch (EmptyResultDataAccessException e) {
-            return true;
-        }
-        return false;
+            return numRows == 0;
     }
 
     public Collection<String> getAllLinksForRevision(final int pageId, final String dateTime) {
@@ -103,6 +111,20 @@ public class DBUtil {
         } catch (EmptyResultDataAccessException e) {
             LOG.info("NO LINKS! -- PageID : " + pageId + " -- Date: " + dateTime);
             return Lists.newArrayList();
+        }
+    }
+
+    public void storeAllCategoryMemberPages(final String categoryName, final Map<Integer, String> allPageTitles) {
+        int categoryID = -1;
+        try {
+            categoryID = jdbcTemplate.queryForInt("SELECT category_id FROM categories WHERE category_name = ?", new Object[] {categoryName});
+        } catch (EmptyResultDataAccessException e) {
+            jdbcTemplate.update("INSERT INTO categories (category_name) VALUES (?)", new Object[] {categoryName});
+        }
+        categoryID = jdbcTemplate.queryForInt("SELECT category_id FROM categories WHERE category_name = ?", new Object[] {categoryName});
+        for (Entry<Integer, String> entry : allPageTitles.entrySet()) {
+            LOG.info("-- " + entry);
+            jdbcTemplate.update("INSERT INTO pages_in_categories (page_id, category_id) VALUES (?, ?)", new Object[] {entry.getKey(), categoryID});
         }
     }
 

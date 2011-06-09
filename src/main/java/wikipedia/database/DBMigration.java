@@ -1,7 +1,6 @@
 package wikipedia.database;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,8 +20,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
 import util.Const;
-import wikipedia.analysis.pagenetwork.CategoryLists;
-import wikipedia.http.CategoryMemberFetcher;
 
 import com.google.common.collect.Lists;
 
@@ -99,10 +96,10 @@ public class DBMigration {
 
     public static void main(final String[] args) {
         final DBMigration dbm = new DBMigration();
-        dbm.migrate();
+       // dbm.migrate();
     }
 
-    private void migrate() {
+  /*  private void migrate() {
         //List<String> categories = Lists.newArrayList("Category:World_Music_Awards_winners", "Category:2010s_rappers");
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC,
                 "en").getAllPagesInAllCategories();
@@ -115,7 +112,7 @@ public class DBMigration {
             threadPool.execute(new SQLWorker(allDatesForHistory, entry, counter++));
         }
         shutdownThreadPool();
-    }
+    }*/
 
     private void shutdownThreadPool() {
         threadPool.shutdown();
