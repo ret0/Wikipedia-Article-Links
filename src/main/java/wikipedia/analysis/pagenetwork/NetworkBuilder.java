@@ -36,7 +36,7 @@ public class NetworkBuilder {
     private final String lang;
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
-    private static final int MIN_INDEGREE = 15;
+    private static final int MIN_INDEGREE = 25;
 
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
