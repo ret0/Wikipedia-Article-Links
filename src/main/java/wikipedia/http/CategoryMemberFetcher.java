@@ -47,7 +47,7 @@ public class CategoryMemberFetcher {
             return getMembersFromDBCache(categoryName);
         } else {
             final Map<Integer, String> allPageTitles = downloadCategoryMembers(categoryName);
-            //database.storeAllCategoryMemberPages(categoryName, allPageTitles);
+            database.storeAllCategoryMemberPages(categoryName, allPageTitles);
             return allPageTitles;
         }
     }
