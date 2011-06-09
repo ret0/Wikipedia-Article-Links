@@ -36,7 +36,7 @@ public class NetworkBuilder {
     private final String lang;
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
-    private static final int MIN_INDEGREE = 100;
+    private static final int MIN_INDEGREE = 120;
 
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
@@ -86,7 +86,7 @@ public class NetworkBuilder {
                 count++;
             }
 
-            Iterator<String> it2 = allIncommingLinks.iterator();
+            /*Iterator<String> it2 = allIncommingLinks.iterator();
             while (it2.hasNext()) {
                 String to = it2.next();
 
@@ -95,15 +95,15 @@ public class NetworkBuilder {
                     map.put(count, to);
                     count++;
                 }
-            }
+            }*/
         }
 
-        try {
-            FileUtils.writeLines(new File("out/excelmap.txt"), keymap.entrySet());
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
+//        try {
+//            FileUtils.writeLines(new File("out/excelmap.txt"), keymap.entrySet());
+//        } catch (IOException e1) {
+//            // TODO Auto-generated catch block
+//            e1.printStackTrace();
+//        }
 
         List<String> nodeOutput = Lists.newArrayList();
         output.add("var initialGraph = {");
@@ -163,7 +163,7 @@ public class NetworkBuilder {
 
         if (keymap.get(from) != null && keymap.get(to) != null) {
             output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: "
-                    + 2 + "}");
+                    + 1 + "}");
         }
     }
 
