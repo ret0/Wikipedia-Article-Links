@@ -224,7 +224,7 @@ public class NetworkBuilder {
             if (counter % 50 == 0) {
                 LOG.info("Task: " + counter);
             }
-            List<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
+            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
             //Collections.
 //            Set<String> allOutGoingLinksHashSet = Sets.newHashSet(allOutgoingLinksOnPage);
 //            Set<String> allOutgoingLinksOnPageSet = Sets.newHashSet(allOutgoingLinksOnPage);

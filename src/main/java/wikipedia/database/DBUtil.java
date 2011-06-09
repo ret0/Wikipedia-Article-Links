@@ -1,9 +1,10 @@
 package wikipedia.database;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -14,9 +15,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
-import util.Const;
 import wikipedia.network.PageLinkInfo;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
 public class DBUtil {
@@ -86,12 +88,18 @@ public class DBUtil {
         return false;
     }
 
-    public List<String> getAllLinksForRevision(final int pageId, final String dateTime) {
+    public Collection<String> getAllLinksForRevision(final int pageId, final String dateTime) {
         try {
-            String allLinksString = jdbcTemplate.queryForObject(
-                    "SELECT revision_links FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?",
-                    String.class, new Object[] {dateTime, pageId});
-            return Lists.newArrayList(StringUtils.split(allLinksString, Const.LINK_SEPARATOR));
+            List<Map<String, Object>> allLinksString = jdbcTemplate.queryForList(
+                    "SELECT target_page_title FROM outgoing_links WHERE src_page_id = ? AND revision_date = ?",
+                    //"SELECT revision_links FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?",
+                    pageId, dateTime);
+            return Collections2.transform(allLinksString, new Function<Map<String, Object>, String>() {
+                public String apply(final Map<String, Object> input) {
+                    return input.get("target_page_title").toString();
+                }
+            });
+            //return Lists.newArrayList(StringUtils.split(allLinksString, Const.LINK_SEPARATOR));
         } catch (EmptyResultDataAccessException e) {
             LOG.info("NO LINKS! -- PageID : " + pageId + " -- Date: " + dateTime);
             return Lists.newArrayList();
