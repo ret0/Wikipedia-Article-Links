@@ -53,13 +53,11 @@ public class CategoryMemberFetcher {
     }
 
     private boolean categoryMembersInCache(final String categoryName) {
-        //return database.categoryMembersInCache(categoryName);
-        return false;
+        return database.categoryMembersInDatabase(categoryName);
     }
 
     private Map<Integer, String> getMembersFromDBCache(final String categoryName) {
-        //return datebase;
-        return Maps.newHashMap();
+        return database.getCategoryMembersByCategoryName(categoryName);
     }
 
     private Map<Integer, String> downloadCategoryMembers(final String categoryName) {

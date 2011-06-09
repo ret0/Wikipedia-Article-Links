@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 
@@ -21,6 +22,7 @@ import wikipedia.network.PageLinkInfo;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class DBUtil {
 
@@ -149,10 +151,39 @@ public class DBUtil {
                 new Object[] { categoryName });
         for (Entry<Integer, String> entry : allPageTitles.entrySet()) {
             LOG.info("-- " + entry);
-            jdbcTemplate.update(
-                    "INSERT INTO pages_in_categories (page_id, category_id) VALUES (?, ?)",
-                    new Object[] { entry.getKey(), categoryID });
+            try {
+                jdbcTemplate.update(
+                        "INSERT INTO pages_in_categories (page_id, category_id) VALUES (?, ?)",
+                        new Object[] { entry.getKey(), categoryID });
+            } catch (DataIntegrityViolationException e) {
+                e.printStackTrace();
+                LOG.error("IGNORING ARTICLE: " + entry + " (probably too new!)");
+            }
         }
+    }
+
+    public boolean categoryMembersInDatabase(final String categoryName) {
+        try {
+            int categoryID = jdbcTemplate.queryForInt(
+                    "SELECT category_id FROM categories WHERE category_name = ?",
+                    new Object[] { categoryName });
+            return categoryID > 0;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
+        }
+    }
+
+    public Map<Integer, String> getCategoryMembersByCategoryName(final String categoryName) {
+        String sqlStmt = "SELECT pages.page_title, pages.page_id FROM pages_in_categories " +
+        "JOIN pages ON pages.page_id = pages_in_categories.page_id " +
+        "JOIN categories ON categories.category_id = pages_in_categories.category_id " +
+        "WHERE categories.category_name = ?";
+        List<Map<String, Object>> sqlResult = jdbcTemplate.queryForList(sqlStmt, categoryName);
+        Map<Integer, String> categoryMembers = Maps.newHashMap();
+        for (Map<String, Object> resultRow : sqlResult) {
+            categoryMembers.put((Integer) resultRow.get("page_id"), (String) resultRow.get("page_title"));
+        }
+        return categoryMembers;
     }
 
 }
