@@ -18,5 +18,11 @@ public class GraphEdge {
         return to;
     }
 
+    @Override
+    public String toString() {
+        return "GraphEdge [from=" + from + ", to=" + to + "]";
+    }
+
+
 
 }

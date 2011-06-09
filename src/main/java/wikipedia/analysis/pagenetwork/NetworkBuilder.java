@@ -36,7 +36,7 @@ public class NetworkBuilder {
     private final String lang;
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
-    private static final int MIN_INDEGREE = 40;
+    private static final int MIN_INDEGREE = 100;
 
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
@@ -79,7 +79,7 @@ public class NetworkBuilder {
             if (inDegree < MIN_INDEGREE) {
                 continue;
             }
-
+            System.out.println(targetPage + "=" + inDegree);
             if (!keymap.containsKey(targetPage)) {
                 keymap.put(targetPage, count);
                 map.put(count, targetPage);
