@@ -95,17 +95,18 @@ public class NetworkBuilder {
 
       //  System.out.println("SIZE as SET: " + allEdgesAsSet.size());
 
-
+        //
+        System.out.println("Edges added");
         BetweennessCentrality bcb = new BetweennessCentrality();
-        bcb.setUnweighted();
-        bcb.init(graph);
-        bcb.compute();
         bcb.registerProgressIndicator(new Progress() {
 
             public void progress(final float percent) {
                 LOG.info("Working: " + percent + "%");
             }
         });
+        bcb.setUnweighted();
+        bcb.init(graph);
+        bcb.compute();
 
         printNodeAndLinkInfo(allLinksInNetwork);
     }
