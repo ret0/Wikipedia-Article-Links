@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,7 +37,7 @@ public class NetworkBuilder {
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 120;
 
-    private static final int NUM_THREADS = 16;
+    private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public NetworkBuilder(final List<String> categories, final String lang,
@@ -85,12 +84,17 @@ public class NetworkBuilder {
         output.add("var initialGraph = {");
         output.add("nodes: [");
 
-        Iterator<Integer> iti = map.keySet().iterator();
+
+        for (String nodeName : map.values()) {
+            writeNode(nodeOutput, nodeName);
+        }
+
+       /* Iterator<Integer> iti = map.keySet().iterator();
         while (iti.hasNext()) {
             int id = iti.next();
             String value = map.get(id);
-            writeNode(nodeOutput, value);
-        }
+
+        }*/
 
         output.add(StringUtils.join(nodeOutput, ", \n"));
 
@@ -100,8 +104,20 @@ public class NetworkBuilder {
 
         int edges = 0;
 
+        for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
+            String to = entry.getKey();
+            List<String> v = entry.getValue();
+            for (String from : v) {
+                if (from.equals(to)) {
+                    continue;
+                }
+                writeEdge(edgeOutput, keymap, to, from);
+                edges++;
+            }
+        }
+
         // In-degree matrix
-        for (String to : indegreeMatrix.keySet()) {
+        /*for (String to : indegreeMatrix.keySet()) {
             List<String> v = indegreeMatrix.get(to);
             Iterator<String> it2 = v.iterator();
             while (it2.hasNext()) {
@@ -112,7 +128,7 @@ public class NetworkBuilder {
                 writeEdge(edgeOutput, keymap, to, from);
                 edges++;
             }
-        }
+        }*/
 
         output.add(StringUtils.join(edgeOutput, ", \n"));
         output.add("] };");
