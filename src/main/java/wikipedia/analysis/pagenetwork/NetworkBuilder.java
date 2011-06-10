@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,10 +74,22 @@ public class NetworkBuilder {
         FileUtils.writeLines(new File("out/bla.txt"), output);
     }
 
-    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage) {
+    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage) throws IOException {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
-        return inDegree >= MIN_INDEGREE;
+        final boolean nodeQualified = inDegree >= MIN_INDEGREE;
+        List<String> allQualifiedNodesInfo = Lists.newArrayList();
+        if(nodeQualified) {
+            allQualifiedNodesInfo.add(targetPage + "=" + inDegree);
+        }
+        writeQualifiedNodesToFile(allQualifiedNodesInfo);
+        return nodeQualified;
+    }
+
+    private void writeQualifiedNodesToFile(final List<String> allQualifiedNodesInfo) throws IOException {
+        final DateTime dateTime = new DateTime();
+        String fileName = "qualified_nodes_ " + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
+        FileUtils.writeLines(new File(fileName), allQualifiedNodesInfo);
     }
 
     private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
