@@ -93,22 +93,24 @@ public class NetworkBuilder {
         output.add("nodes: [");
         output.add(writeAllNodes(nameIndexMap.keySet()));
         output.add("], links:[");
-        final Map<String, Integer> keymap = FAILPrepareKeyMap(nameIndexMap); //FIXME
-        output.add(writeAllEdges(indegreeMatrix, keymap));
+        output.add(writeAllEdges(indegreeMatrix, nameIndexMap));
         output.add("] };");
         return output;
     }
 
-    private Map<String, Integer> FAILPrepareKeyMap(final Map<String, Integer> nameIndexMap) {
+    /*private Map<String, Integer> FAILPrepareKeyMap(final Map<String, Integer> nameIndexMap) {
         Map<Integer, String> indexNamexMap = Maps.newHashMap();
         for (Entry<String, Integer> entry : nameIndexMap.entrySet()) {
             indexNamexMap.put(entry.getValue(), entry.getKey());
         }
         return nameIndexMap;
-    }
+    }*/
 
     private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
-                                 final Map<String, Integer> keymap) {
+                                 final Map<String, Integer> nameIndexMap) {
+
+        //final Map<String, Integer> keymap = FAILPrepareKeyMap(nameIndexMap); //FIXME
+
         List<String> edgeOutput = Lists.newArrayList();
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
             String targetPageName = entry.getKey();
@@ -117,7 +119,7 @@ public class NetworkBuilder {
                 if (sourcePageName.equals(targetPageName)) {
                     continue;
                 }
-                writeEdge(edgeOutput, keymap, targetPageName, sourcePageName);
+                writeEdge(edgeOutput, nameIndexMap, targetPageName, sourcePageName);
             }
         }
         return StringUtils.join(edgeOutput, ", \n");
