@@ -63,6 +63,7 @@ public class NetworkBuilder {
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
+
         Map<Integer, String> map = new TreeMap<Integer, String>();
         Map<String, Integer> keymap = new TreeMap<String, Integer>();
         int count = 0;
@@ -79,59 +80,7 @@ public class NetworkBuilder {
             }
         }
 
-        List<String> output = Lists.<String> newArrayList();
-        List<String> nodeOutput = Lists.newArrayList();
-        output.add("var initialGraph = {");
-        output.add("nodes: [");
-
-
-        for (String nodeName : map.values()) {
-            writeNode(nodeOutput, nodeName);
-        }
-
-       /* Iterator<Integer> iti = map.keySet().iterator();
-        while (iti.hasNext()) {
-            int id = iti.next();
-            String value = map.get(id);
-
-        }*/
-
-        output.add(StringUtils.join(nodeOutput, ", \n"));
-
-        output.add("], links:[");
-
-        List<String> edgeOutput = Lists.newArrayList();
-
-        int edges = 0;
-
-        for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
-            String to = entry.getKey();
-            List<String> v = entry.getValue();
-            for (String from : v) {
-                if (from.equals(to)) {
-                    continue;
-                }
-                writeEdge(edgeOutput, keymap, to, from);
-                edges++;
-            }
-        }
-
-        // In-degree matrix
-        /*for (String to : indegreeMatrix.keySet()) {
-            List<String> v = indegreeMatrix.get(to);
-            Iterator<String> it2 = v.iterator();
-            while (it2.hasNext()) {
-                String from = it2.next();
-                if (from.equals(to)) {
-                    continue;
-                }
-                writeEdge(edgeOutput, keymap, to, from);
-                edges++;
-            }
-        }*/
-
-        output.add(StringUtils.join(edgeOutput, ", \n"));
-        output.add("] };");
+        List<String> output = writeJSONResult(indegreeMatrix, map, keymap);
         try {
             FileUtils.writeLines(new File("out/bla.txt"), output);
         } catch (IOException e) {
@@ -139,18 +88,54 @@ public class NetworkBuilder {
         }
     }
 
-    private static void writeNode(final List<String> output,
+    private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
+                                         final Map<Integer, String> map,
+                                         final Map<String, Integer> keymap) {
+        List<String> output = Lists.<String> newArrayList();
+        output.add("var initialGraph = {");
+        output.add("nodes: [");
+        output.add(writeAllNodes(map));
+        output.add("], links:[");
+        output.add(writeAllEdges(indegreeMatrix, keymap));
+        output.add("] };");
+        return output;
+    }
+
+    private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
+                                 final Map<String, Integer> keymap) {
+        List<String> edgeOutput = Lists.newArrayList();
+        for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
+            String targetPageName = entry.getKey();
+            List<String> incommingLinks = entry.getValue();
+            for (String sourcePageName : incommingLinks) {
+                if (sourcePageName.equals(targetPageName)) {
+                    continue;
+                }
+                writeEdge(edgeOutput, keymap, targetPageName, sourcePageName);
+            }
+        }
+        return StringUtils.join(edgeOutput, ", \n");
+    }
+
+    private String writeAllNodes(final Map<Integer, String> map) {
+        List<String> nodeOutput = Lists.newArrayList();
+        for (String nodeName : map.values()) {
+            writeNode(nodeOutput, nodeName);
+        }
+        return StringUtils.join(nodeOutput, ", \n");
+    }
+
+    private void writeNode(final List<String> output,
                                   final String name) {
         String fixedName = StringUtils.replace(name, "\"", ""); // FIXME will
                                                                 // break graph!
         output.add("{nodeName: \"" + fixedName + "\", group: 1}");
     }
 
-    private static void writeEdge(final List<String> output,
+    private void writeEdge(final List<String> output,
                                   final Map<String, Integer> keymap,
                                   final String to,
                                   final String from) {
-
         if (keymap.get(from) != null && keymap.get(to) != null) {
             output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: " + 1 + "}");
         }
