@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.graphstream.algorithm.BetweennessCentrality;
+import org.graphstream.algorithm.BetweennessCentrality.Progress;
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.implementations.SingleGraph;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -59,50 +63,54 @@ public class NetworkBuilder {
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
 
-        List<GraphEdge> everyNodeToEveryOtherNode = createAllVerteciesPairs(allPagesInNetwork);
-        Map<String, Node> nodeObjects = Maps.newHashMap();
-        Node[] nodes = prepareNodes(allPagesInNetwork, nodeObjects);
-        Edge[] edges = prepareEdges(allLinksInNetwork, nodeObjects);
-        FloydWarshall fw = new FloydWarshall(nodes, edges);
-
-        Map<GraphEdge, List<Node>> allConnectionsAndTheirShortestPaths = Maps.newHashMap();
-        for (GraphEdge graphEdge : everyNodeToEveryOtherNode) {
-            List<Node> shortestPath = fw.getShortestPath(nodeObjects.get(graphEdge.getFrom()), nodeObjects.get(graphEdge.getTo()));
-            allConnectionsAndTheirShortestPaths.put(graphEdge, shortestPath);
+        Graph graph = new SingleGraph("Betweenness Test");
+        for (String nodeName : allPagesInNetwork.values()) {
+            graph.addNode(nodeName);
         }
+
+/*        for (GraphEdge graphEdge : allLinksInNetwork) {
+            String from = graphEdge.getFrom();
+            String to = graphEdge.getTo();
+            String id = from + " -> " + to;
+                graph.addEdge(id, from, to, true);
+            }
+        }
+        */
+       // System.out.println("SIZE as LIST: " + allLinksInNetwork.size());
+
+        Set<GraphEdge> allEdgesAsSet = Sets.newHashSet();
+        for (GraphEdge graphEdge : allLinksInNetwork) {
+            allEdgesAsSet.add(graphEdge);
+        }
+
+        for (GraphEdge graphEdge : allEdgesAsSet) {
+            String from = graphEdge.getFrom();
+            String to = graphEdge.getTo();
+            String id = from + " -> " + to;
+            String reverseID = from + " -> " + to;
+            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null) {
+                graph.addEdge(id, from, to, true);
+            }
+        }
+
+      //  System.out.println("SIZE as SET: " + allEdgesAsSet.size());
+
+
+        BetweennessCentrality bcb = new BetweennessCentrality();
+        bcb.setUnweighted();
+        bcb.init(graph);
+        bcb.compute();
+        bcb.registerProgressIndicator(new Progress() {
+
+            public void progress(final float percent) {
+                LOG.info("Working: " + percent + "%");
+            }
+        });
 
         printNodeAndLinkInfo(allLinksInNetwork);
     }
 
-    private Edge[] prepareEdges(final List<GraphEdge> allLinksInNetwork, final Map<String, Node> nodeObjects) {
-        List<Edge> edges = Lists.newArrayList();
-        for (GraphEdge graphEdge : allLinksInNetwork) {
-            edges.add(new Edge(nodeObjects.get(graphEdge.getFrom()), nodeObjects.get(graphEdge.getTo()), 1));
-        }
-        return edges.toArray(new Edge[] { });
-    }
 
-    private Node[] prepareNodes(final Map<Integer, String> allPagesInNetwork, final Map<String, Node> nodeObjects) {
-        List<Node> nodes = Lists.newArrayList();
-        for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
-            final Node node = new Node(entry.getKey());
-            nodeObjects.put(entry.getValue(), node);
-            nodes.add(node);
-        }
-        return nodes.toArray(new Node[] {});
-    }
-
-    private List<GraphEdge> createAllVerteciesPairs(final Map<Integer, String> allPagesInNetwork) {
-        List<GraphEdge> allVerteciesPairs = Lists.newArrayList();
-        for (String fromPage : allPagesInNetwork.values()) {
-            for (String toPage : allPagesInNetwork.values()) {
-                if(!fromPage.equals(toPage)) {
-                    allVerteciesPairs.add(new GraphEdge(fromPage, toPage));
-                }
-            }
-        }
-        return allVerteciesPairs;
-    }
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
