@@ -58,7 +58,50 @@ public class NetworkBuilder {
         Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
+
+        List<GraphEdge> everyNodeToEveryOtherNode = createAllVerteciesPairs(allPagesInNetwork);
+        Map<String, Node> nodeObjects = Maps.newHashMap();
+        Node[] nodes = prepareNodes(allPagesInNetwork, nodeObjects);
+        Edge[] edges = prepareEdges(allLinksInNetwork, nodeObjects);
+        FloydWarshall fw = new FloydWarshall(nodes, edges);
+
+        Map<GraphEdge, List<Node>> allConnectionsAndTheirShortestPaths = Maps.newHashMap();
+        for (GraphEdge graphEdge : everyNodeToEveryOtherNode) {
+            List<Node> shortestPath = fw.getShortestPath(nodeObjects.get(graphEdge.getFrom()), nodeObjects.get(graphEdge.getTo()));
+            allConnectionsAndTheirShortestPaths.put(graphEdge, shortestPath);
+        }
+
         printNodeAndLinkInfo(allLinksInNetwork);
+    }
+
+    private Edge[] prepareEdges(final List<GraphEdge> allLinksInNetwork, final Map<String, Node> nodeObjects) {
+        List<Edge> edges = Lists.newArrayList();
+        for (GraphEdge graphEdge : allLinksInNetwork) {
+            edges.add(new Edge(nodeObjects.get(graphEdge.getFrom()), nodeObjects.get(graphEdge.getTo()), 1));
+        }
+        return edges.toArray(new Edge[] { });
+    }
+
+    private Node[] prepareNodes(final Map<Integer, String> allPagesInNetwork, final Map<String, Node> nodeObjects) {
+        List<Node> nodes = Lists.newArrayList();
+        for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
+            final Node node = new Node(entry.getKey());
+            nodeObjects.put(entry.getValue(), node);
+            nodes.add(node);
+        }
+        return nodes.toArray(new Node[] {});
+    }
+
+    private List<GraphEdge> createAllVerteciesPairs(final Map<Integer, String> allPagesInNetwork) {
+        List<GraphEdge> allVerteciesPairs = Lists.newArrayList();
+        for (String fromPage : allPagesInNetwork.values()) {
+            for (String toPage : allPagesInNetwork.values()) {
+                if(!fromPage.equals(toPage)) {
+                    allVerteciesPairs.add(new GraphEdge(fromPage, toPage));
+                }
+            }
+        }
+        return allVerteciesPairs;
     }
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
