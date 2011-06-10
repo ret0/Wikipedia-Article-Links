@@ -63,20 +63,21 @@ public class NetworkBuilder {
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
 
-        Graph graph = new SingleGraph("Betweenness Test");
-        for (String nodeName : allPagesInNetwork.values()) {
-            graph.addNode(nodeName);
-        }
-
-/*        for (GraphEdge graphEdge : allLinksInNetwork) {
-            String from = graphEdge.getFrom();
-            String to = graphEdge.getTo();
-            String id = from + " -> " + to;
-                graph.addEdge(id, from, to, true);
+        //reduce nodes!
+        Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
+        System.out.println("Before reduction: " + indegreeMatrix.size());
+        List<String> reducedPages = Lists.newArrayList();
+        for (Entry<String, List<String>> incommingInfo : indegreeMatrix.entrySet()) {
+            if(incommingInfo.getValue().size() > 10) {
+                reducedPages.add(incommingInfo.getKey());
             }
         }
-        */
-       // System.out.println("SIZE as LIST: " + allLinksInNetwork.size());
+        System.out.println("After reduction: " + reducedPages.size());
+
+        Graph graph = new SingleGraph("Betweenness Test");
+        for (String nodeName : reducedPages) {
+            graph.addNode(nodeName);
+        }
 
         Set<GraphEdge> allEdgesAsSet = Sets.newHashSet();
         for (GraphEdge graphEdge : allLinksInNetwork) {
@@ -88,14 +89,13 @@ public class NetworkBuilder {
             String to = graphEdge.getTo();
             String id = from + " -> " + to;
             String reverseID = to + " -> " + from;
-            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null) {
+            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null && reducedPages.contains(from) && reducedPages.contains(to)) {
                 graph.addEdge(id, from, to, true);
             }
         }
 
       //  System.out.println("SIZE as SET: " + allEdgesAsSet.size());
 
-        //
         System.out.println("Edges added");
         BetweennessCentrality bcb = new BetweennessCentrality();
         bcb.registerProgressIndicator(new Progress() {
@@ -108,7 +108,7 @@ public class NetworkBuilder {
         bcb.init(graph);
         bcb.compute();
 
-        printNodeAndLinkInfo(allLinksInNetwork);
+        //printNodeAndLinkInfo(allLinksInNetwork);
     }
 
 
