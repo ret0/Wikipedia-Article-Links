@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,43 +46,37 @@ public class NetworkBuilder {
         this.revisionDateTime = revisionDateTime;
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         final String lang = "en";
         final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, revisionDateTime);
         nb.printNetworkData();
     }
 
-    private void printNetworkData() {
+    private void printNetworkData() throws IOException {
         Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
-                .getAllPagesInAllCategories();
+                .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         printNodeAndLinkInfo(allLinksInNetwork);
     }
 
-    private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) {
+    private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-
-        Map<String, Integer> nameIndexMap = new TreeMap<String, Integer>();
-        //Map<String, Integer> keymap = new TreeMap<String, Integer>();
-        int count = 0;
+        Map<String, Integer> nameIndexMap = Maps.newTreeMap();
+        int nodeIndex = 0;
         for (String targetPage : indegreeMatrix.keySet()) {
-            List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
-            int inDegree = allIncommingLinks.size();
-            if (inDegree < MIN_INDEGREE) {
-                continue;
-            }
-            if (!nameIndexMap.containsKey(targetPage)) {
-                nameIndexMap.put(targetPage, count++);
+            if(nodeQualifiedForGraph(indegreeMatrix, targetPage) && !nameIndexMap.containsKey(targetPage)) {
+                nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
-
         List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
-        try {
-            FileUtils.writeLines(new File("out/bla.txt"), output);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        FileUtils.writeLines(new File("out/bla.txt"), output);
+    }
+
+    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage) {
+        List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
+        int inDegree = allIncommingLinks.size();
+        return inDegree >= MIN_INDEGREE;
     }
 
     private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
@@ -98,20 +91,10 @@ public class NetworkBuilder {
         return output;
     }
 
-    /*private Map<String, Integer> FAILPrepareKeyMap(final Map<String, Integer> nameIndexMap) {
-        Map<Integer, String> indexNamexMap = Maps.newHashMap();
-        for (Entry<String, Integer> entry : nameIndexMap.entrySet()) {
-            indexNamexMap.put(entry.getValue(), entry.getKey());
-        }
-        return nameIndexMap;
-    }*/
-
     private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
                                  final Map<String, Integer> nameIndexMap) {
-
-        //final Map<String, Integer> keymap = FAILPrepareKeyMap(nameIndexMap); //FIXME
-
         List<String> edgeOutput = Lists.newArrayList();
+        // TODO loop not optimal
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
             String targetPageName = entry.getKey();
             List<String> incommingLinks = entry.getValue();
@@ -119,7 +102,9 @@ public class NetworkBuilder {
                 if (sourcePageName.equals(targetPageName)) {
                     continue;
                 }
-                writeEdge(edgeOutput, nameIndexMap, targetPageName, sourcePageName);
+                if (nameIndexMap.get(sourcePageName) != null && nameIndexMap.get(targetPageName) != null) {
+                    edgeOutput.add("{source: " + nameIndexMap.get(sourcePageName) + ", target: " + nameIndexMap.get(targetPageName) + ", value: " + 1 + "}");
+                }
             }
         }
         return StringUtils.join(edgeOutput, ", \n");
@@ -138,15 +123,6 @@ public class NetworkBuilder {
         String fixedName = StringUtils.replace(name, "\"", ""); // FIXME will
                                                                 // break graph!
         output.add("{nodeName: \"" + fixedName + "\", group: 1}");
-    }
-
-    private void writeEdge(final List<String> output,
-                                  final Map<String, Integer> keymap,
-                                  final String to,
-                                  final String from) {
-        if (keymap.get(from) != null && keymap.get(to) != null) {
-            output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: " + 1 + "}");
-        }
     }
 
     private Map<String, List<String>> initIndegreeMatrix(final List<GraphEdge> allLinksInNetwork) {
