@@ -38,7 +38,7 @@ public class NetworkBuilder {
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 120;
 
-    private static final int NUM_THREADS = 8;
+    private static final int NUM_THREADS = 16;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public NetworkBuilder(final List<String> categories, final String lang,
@@ -50,8 +50,7 @@ public class NetworkBuilder {
 
     public static void main(final String[] args) {
         final String lang = "en";
-        final String revisionDateTime = new DateMidnight(2011, 5, 1)
-                .toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+        final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, revisionDateTime);
         nb.printNetworkData();
     }
@@ -81,7 +80,6 @@ public class NetworkBuilder {
             }
         }
 
-
         List<String> output = Lists.<String> newArrayList();
         List<String> nodeOutput = Lists.newArrayList();
         output.add("var initialGraph = {");
@@ -107,9 +105,7 @@ public class NetworkBuilder {
             List<String> v = indegreeMatrix.get(to);
             Iterator<String> it2 = v.iterator();
             while (it2.hasNext()) {
-
                 String from = it2.next();
-
                 if (from.equals(to)) {
                     continue;
                 }
@@ -140,8 +136,7 @@ public class NetworkBuilder {
                                   final String from) {
 
         if (keymap.get(from) != null && keymap.get(to) != null) {
-            output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: "
-                    + 1 + "}");
+            output.add("{source: " + keymap.get(from) + ", target: " + keymap.get(to) + ", value: " + 1 + "}");
         }
     }
 
@@ -162,19 +157,15 @@ public class NetworkBuilder {
     }
 
     private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetwork) {
-        Collection<String> allPageNamesInNetwork = allPagesInNetwork.values();
-        Set<String> allPageNamesInNetwork2 = Sets.newHashSet(allPageNamesInNetwork);
-
-        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists
-                .<GraphEdge> newArrayList());
+        Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetwork.values());
+        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists.<GraphEdge>newArrayList());
         LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
-        int counter = 1;
+        int taskCounter = 1;
         try {
             for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
-                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork2, pageName,
-                        allLinksInNetwork, counter++));
+                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName, allLinksInNetwork, taskCounter++));
             }
         } finally {
             shutdownThreadPool();
@@ -211,13 +202,10 @@ public class NetworkBuilder {
         }
 
         public void run() {
-            // LOG.info("Getting Links -- Page: " + pageName + " -- Date: " +
-            // revisionDateTime);
-            if (counter % 50 == 0) {
+            if (counter % 1000 == 0) {
                 LOG.info("Task: " + counter);
             }
-            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId,
-                    revisionDateTime);
+            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
             for (String outgoingLink : allOutgoingLinksOnPage) {
                 if (allPageNamesInNetwork.contains(outgoingLink)) {
                     allLinksInNetwork.add(new GraphEdge(pageName, outgoingLink));
