@@ -68,7 +68,7 @@ public class NetworkBuilder {
         System.out.println("Before reduction: " + indegreeMatrix.size());
         List<String> reducedPages = Lists.newArrayList();
         for (Entry<String, List<String>> incommingInfo : indegreeMatrix.entrySet()) {
-            if(incommingInfo.getValue().size() > 10) {
+            if(incommingInfo.getValue().size() > 8) {
                 reducedPages.add(incommingInfo.getKey());
             }
         }
@@ -108,6 +108,9 @@ public class NetworkBuilder {
         bcb.init(graph);
         bcb.compute();
 
+        for (org.graphstream.graph.Node graphNode : graph.getNodeSet()) {
+            System.out.println(graphNode.getId() + "=" + graphNode.getInDegree() + "=" + graphNode.getAttribute("Cb"));
+        }
         //printNodeAndLinkInfo(allLinksInNetwork);
     }
 
