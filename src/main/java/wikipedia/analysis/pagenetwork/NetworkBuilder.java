@@ -64,7 +64,7 @@ public class NetworkBuilder {
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
 
-        Map<Integer, String> indexNameMap = new TreeMap<Integer, String>();
+        Map<String, Integer> nameIndexMap = new TreeMap<String, Integer>();
         //Map<String, Integer> keymap = new TreeMap<String, Integer>();
         int count = 0;
         for (String targetPage : indegreeMatrix.keySet()) {
@@ -73,14 +73,12 @@ public class NetworkBuilder {
             if (inDegree < MIN_INDEGREE) {
                 continue;
             }
-            if (!indexNameMap.containsKey(targetPage)) {
-                //keymap.put(targetPage, count);
-                indexNameMap.put(count, targetPage);
-                count++;
+            if (!nameIndexMap.containsKey(targetPage)) {
+                nameIndexMap.put(targetPage, count++);
             }
         }
 
-        List<String> output = writeJSONResult(indegreeMatrix, indexNameMap);
+        List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
         try {
             FileUtils.writeLines(new File("out/bla.txt"), output);
         } catch (IOException e) {
@@ -89,22 +87,22 @@ public class NetworkBuilder {
     }
 
     private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
-                                         final Map<Integer, String> indexNameMap) {
+                                         final Map<String, Integer> nameIndexMap) {
         List<String> output = Lists.<String> newArrayList();
         output.add("var initialGraph = {");
         output.add("nodes: [");
-        output.add(writeAllNodes(indexNameMap));
+        output.add(writeAllNodes(nameIndexMap.keySet()));
         output.add("], links:[");
-        final Map<String, Integer> keymap = FAILPrepareKeyMap(indexNameMap); //FIXME
+        final Map<String, Integer> keymap = FAILPrepareKeyMap(nameIndexMap); //FIXME
         output.add(writeAllEdges(indegreeMatrix, keymap));
         output.add("] };");
         return output;
     }
 
-    private Map<String, Integer> FAILPrepareKeyMap(final Map<Integer, String> indexNameMap) {
-        Map<String, Integer> nameIndexMap = Maps.newHashMap();
-        for (Entry<Integer, String> entry : indexNameMap.entrySet()) {
-            nameIndexMap.put(entry.getValue(), entry.getKey());
+    private Map<String, Integer> FAILPrepareKeyMap(final Map<String, Integer> nameIndexMap) {
+        Map<Integer, String> indexNamexMap = Maps.newHashMap();
+        for (Entry<String, Integer> entry : nameIndexMap.entrySet()) {
+            indexNamexMap.put(entry.getValue(), entry.getKey());
         }
         return nameIndexMap;
     }
@@ -125,9 +123,9 @@ public class NetworkBuilder {
         return StringUtils.join(edgeOutput, ", \n");
     }
 
-    private String writeAllNodes(final Map<Integer, String> map) {
+    private String writeAllNodes(final Set<String> allPageNames) {
         List<String> nodeOutput = Lists.newArrayList();
-        for (String nodeName : map.values()) {
+        for (String nodeName : allPageNames) {
             writeNode(nodeOutput, nodeName);
         }
         return StringUtils.join(nodeOutput, ", \n");
