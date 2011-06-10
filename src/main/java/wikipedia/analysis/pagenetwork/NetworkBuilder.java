@@ -65,30 +65,30 @@ public class NetworkBuilder {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newTreeMap();
         int nodeIndex = 0;
+        List<String> allQualifiedNodesInfo = Lists.newArrayList();
         for (String targetPage : indegreeMatrix.keySet()) {
-            if(nodeQualifiedForGraph(indegreeMatrix, targetPage) && !nameIndexMap.containsKey(targetPage)) {
+            if(nodeQualifiedForGraph(indegreeMatrix, targetPage, allQualifiedNodesInfo) && !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
+        writeQualifiedNodesToFile(allQualifiedNodesInfo);
         List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
         FileUtils.writeLines(new File("out/bla.txt"), output);
     }
 
-    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage) throws IOException {
+    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage, final List<String> allQualifiedNodesInfo) throws IOException {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        List<String> allQualifiedNodesInfo = Lists.newArrayList();
         if(nodeQualified) {
             allQualifiedNodesInfo.add(targetPage + "=" + inDegree);
         }
-        writeQualifiedNodesToFile(allQualifiedNodesInfo);
         return nodeQualified;
     }
 
     private void writeQualifiedNodesToFile(final List<String> allQualifiedNodesInfo) throws IOException {
         final DateTime dateTime = new DateTime();
-        String fileName = "qualified_nodes_ " + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
+        String fileName = "out/qualified_nodes_" + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
         FileUtils.writeLines(new File(fileName), allQualifiedNodesInfo);
     }
 
