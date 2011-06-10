@@ -87,7 +87,7 @@ public class NetworkBuilder {
             String from = graphEdge.getFrom();
             String to = graphEdge.getTo();
             String id = from + " -> " + to;
-            String reverseID = from + " -> " + to;
+            String reverseID = to + " -> " + from;
             if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null) {
                 graph.addEdge(id, from, to, true);
             }
