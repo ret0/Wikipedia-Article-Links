@@ -116,7 +116,7 @@ public class NetworkBuilder {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        if (nodeQualified) {
+        if (inDegree >= 100) {
             allQualifiedNodesInfo.add(targetPage + "=" + inDegree);
         }
         return nodeQualified;
