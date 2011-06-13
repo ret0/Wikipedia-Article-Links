@@ -36,12 +36,8 @@ public class DBUtil {
     /**
      * SQL Stmts
      */
-    private static final String SELECT_REVISION_COUNT = "SELECT count(0) FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?";
     private static final String SELECT_PAGE_COUNT = "SELECT count(0) FROM pages WHERE page_id = ?";
-
     private static final String INSERT_PAGE_STMT = "INSERT INTO pages (page_id, page_title, creation_date) VALUES (?, ?, ?)";
-    private static final String INSERT_REVISION_STMT = "INSERT INTO page_revisions (revision_id, revision_timestamp, page_id, revision_links) "
-            + "VALUES (?, ?, ?, ?)";
 
     private final SimpleJdbcTemplate jdbcTemplate;
 
@@ -117,9 +113,7 @@ public class DBUtil {
                                                      final String dateTime) {
         try {
             List<Map<String, Object>> allLinksString = jdbcTemplate
-                    .queryForList(
-                            "SELECT target_page_title FROM outgoing_links WHERE src_page_id = ? AND revision_date = ?",
-                            // "SELECT revision_links FROM page_revisions WHERE revision_timestamp = ? AND page_id = ?",
+                    .queryForList("SELECT target_page_title FROM outgoing_links WHERE src_page_id = ? AND revision_date = ?",
                             pageId, dateTime);
             return Collections2.transform(allLinksString,
                     new Function<Map<String, Object>, String>() {
@@ -127,8 +121,6 @@ public class DBUtil {
                             return input.get("target_page_title").toString();
                         }
                     });
-            // return Lists.newArrayList(StringUtils.split(allLinksString,
-            // Const.LINK_SEPARATOR));
         } catch (EmptyResultDataAccessException e) {
             LOG.info("NO LINKS! -- PageID : " + pageId + " -- Date: " + dateTime);
             return Lists.newArrayList();

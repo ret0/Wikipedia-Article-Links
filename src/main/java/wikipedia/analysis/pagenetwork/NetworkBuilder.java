@@ -14,18 +14,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.graphstream.algorithm.BetweennessCentrality;
-import org.graphstream.algorithm.BetweennessCentrality.Progress;
-import org.graphstream.graph.Graph;
-import org.graphstream.graph.implementations.SingleGraph;
 import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import wikipedia.database.DBUtil;
 import wikipedia.http.CategoryMemberFetcher;
 import wikipedia.network.GraphEdge;
+import wikipedia.network.TimeFrameGraph;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -44,77 +40,108 @@ public class NetworkBuilder {
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
+    private final Map<Integer, String> allPagesInNetwork;
+
     public NetworkBuilder(final List<String> categories, final String lang,
-            final String revisionDateTime) {
+            final DateMidnight dateMidnight) {
         this.categories = categories;
         this.lang = lang;
-        this.revisionDateTime = revisionDateTime;
+        this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
+        .getAllPagesInAllCategories();
     }
 
     public static void main(final String[] args) throws IOException {
         final String lang = "en";
-        final String revisionDateTime = new DateMidnight(2011, 5, 1).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-        NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, revisionDateTime);
+        NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, new DateMidnight(2011, 1, 1));
         nb.printNetworkData();
+    }
+
+    public TimeFrameGraph getGraphAtDate() {
+        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
+        Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
+        Map<String, Integer> nameIndexMap = Maps.newTreeMap();
+        int nodeIndex = 0;
+        List<String> allQualifiedNodesInfo = Lists.newArrayList();
+        for (String targetPage : indegreeMatrix.keySet()) {
+            if(nodeQualifiedForGraph(indegreeMatrix, targetPage, allQualifiedNodesInfo) && !nameIndexMap.containsKey(targetPage)) {
+                nameIndexMap.put(targetPage, nodeIndex++);
+            }
+        }
+        List<GraphEdge> edgeOutput = Lists.newArrayList();
+        // TODO loop not optimal
+        for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
+            String targetPageName = entry.getKey();
+            List<String> incommingLinks = entry.getValue();
+            for (String sourcePageName : incommingLinks) {
+                if (sourcePageName.equals(targetPageName)) {
+                    continue;
+                }
+                if (nameIndexMap.get(sourcePageName) != null && nameIndexMap.get(targetPageName) != null) {
+                    edgeOutput.add(new GraphEdge(sourcePageName, targetPageName));
+                }
+            }
+        }
+
+        return new TimeFrameGraph(nameIndexMap, edgeOutput);
     }
 
     private void printNetworkData() throws IOException {
         Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
-
+        printNodeAndLinkInfo(allLinksInNetwork);
         //reduce nodes!
-        Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-        System.out.println("Before reduction: " + indegreeMatrix.size());
-        List<String> reducedPages = Lists.newArrayList();
-        for (Entry<String, List<String>> incommingInfo : indegreeMatrix.entrySet()) {
-            if(incommingInfo.getValue().size() > 8) {
-                reducedPages.add(incommingInfo.getKey());
-            }
-        }
-        System.out.println("After reduction: " + reducedPages.size());
-
-        Graph graph = new SingleGraph("Betweenness Test");
-        for (String nodeName : reducedPages) {
-            graph.addNode(nodeName);
-        }
-
-        Set<GraphEdge> allEdgesAsSet = Sets.newHashSet();
-        for (GraphEdge graphEdge : allLinksInNetwork) {
-            allEdgesAsSet.add(graphEdge);
-        }
-
-        for (GraphEdge graphEdge : allEdgesAsSet) {
-            String from = graphEdge.getFrom();
-            String to = graphEdge.getTo();
-            String id = from + " -> " + to;
-            String reverseID = to + " -> " + from;
-            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null && reducedPages.contains(from) && reducedPages.contains(to)) {
-                graph.addEdge(id, from, to, true);
-            }
-        }
-
-      //  System.out.println("SIZE as SET: " + allEdgesAsSet.size());
-
-        System.out.println("Edges added");
-        BetweennessCentrality bcb = new BetweennessCentrality();
-        bcb.registerProgressIndicator(new Progress() {
-
-            public void progress(final float percent) {
-                LOG.info("Working: " + percent + "%");
-            }
-        });
-        bcb.setUnweighted();
-        bcb.init(graph);
-        bcb.compute();
-
-        for (org.graphstream.graph.Node graphNode : graph.getNodeSet()) {
-            System.out.println(graphNode.getId() + "=" + graphNode.getInDegree() + "=" + graphNode.getAttribute("Cb"));
-        }
-        //printNodeAndLinkInfo(allLinksInNetwork);
+       // Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
+//        System.out.println("Before reduction: " + indegreeMatrix.size());
+//        List<String> reducedPages = Lists.newArrayList();
+//        for (Entry<String, List<String>> incommingInfo : indegreeMatrix.entrySet()) {
+//            if(incommingInfo.getValue().size() > 8) {
+//                reducedPages.add(incommingInfo.getKey());
+//            }
+//        }
+        //prepareGraphForBetweennessCalculation(allLinksInNetwork, reducedPages);
+        //calculateAndPrintBetweenness(graph);
     }
 
+//    private void prepareGraphForBetweennessCalculation(final List<GraphEdge> allLinksInNetwork,
+//                                                       final List<String> reducedPages) {
+//        Graph graph = new SingleGraph("Betweenness Test");
+//        for (String nodeName : reducedPages) {
+//            graph.addNode(nodeName);
+//        }
+//
+//        Set<GraphEdge> allEdgesAsSet = Sets.newHashSet();
+//        for (GraphEdge graphEdge : allLinksInNetwork) {
+//            allEdgesAsSet.add(graphEdge);
+//        }
+//
+//        for (GraphEdge graphEdge : allEdgesAsSet) {
+//            String from = graphEdge.getFrom();
+//            String to = graphEdge.getTo();
+//            String id = from + " -> " + to;
+//            String reverseID = to + " -> " + from;
+//            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null && reducedPages.contains(from) && reducedPages.contains(to)) {
+//                graph.addEdge(id, from, to, true);
+//            }
+//        }
+//    }
 
+//    private void calculateAndPrintBetweenness(final Graph graph) {
+//        BetweennessCentrality bcb = new BetweennessCentrality();
+//        bcb.registerProgressIndicator(new Progress() {
+//            public void progress(final float percent) {
+//                LOG.info("Working: " + percent + "%");
+//            }
+//        });
+//        bcb.setUnweighted();
+//        bcb.init(graph);
+//        bcb.compute();
+//
+//        for (org.graphstream.graph.Node graphNode : graph.getNodeSet()) {
+//            System.out.println(graphNode.getId() + "=" + graphNode.getInDegree() + "=" + graphNode.getAttribute("Cb"));
+//        }
+//    }
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
@@ -126,26 +153,28 @@ public class NetworkBuilder {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
-        writeQualifiedNodesToFile(allQualifiedNodesInfo);
+        //writeQualifiedNodesToFile(allQualifiedNodesInfo);
         List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
-        FileUtils.writeLines(new File("out/bla.txt"), output);
+        FileUtils.writeLines(new File("out/bla_2011_Jan.txt"), output);
     }
 
-    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix, final String targetPage, final List<String> allQualifiedNodesInfo) throws IOException {
+    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
+                                          final String targetPage,
+                                          final List<String> allQualifiedNodesInfo) {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        if(nodeQualified) {
+        if (nodeQualified) {
             allQualifiedNodesInfo.add(targetPage + "=" + inDegree);
         }
         return nodeQualified;
     }
 
-    private void writeQualifiedNodesToFile(final List<String> allQualifiedNodesInfo) throws IOException {
-        final DateTime dateTime = new DateTime();
-        String fileName = "out/qualified_nodes_" + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
-        FileUtils.writeLines(new File(fileName), allQualifiedNodesInfo);
-    }
+//    private void writeQualifiedNodesToFile(final List<String> allQualifiedNodesInfo) throws IOException {
+//        final DateTime dateTime = new DateTime();
+//        String fileName = "out/qualified_nodes_" + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
+//        FileUtils.writeLines(new File(fileName), allQualifiedNodesInfo);
+//    }
 
     private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
                                          final Map<String, Integer> nameIndexMap) {
