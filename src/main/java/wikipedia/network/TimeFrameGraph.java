@@ -3,7 +3,7 @@ package wikipedia.network;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
+import com.google.common.collect.Maps;
 
 public class TimeFrameGraph {
 
@@ -15,26 +15,20 @@ public class TimeFrameGraph {
         this.allEdges = allEdges;
     }
 
-    public static String generateTimeFrameInformation(final List<TimeFrameGraph> allFrameGraphs) {
-        StringBuilder jsonOutput = new StringBuilder();
-        jsonOutput.append(printInitialGraph(allFrameGraphs.get(0)));
-        jsonOutput.append(printAllDeltaGraphs());
-        return jsonOutput.toString();
+    public List<GraphEdge> getAllEdges() {
+        return allEdges;
     }
 
-    private static String printAllDeltaGraphs() {
-        // TODO Auto-generated method stub
-        return "";
-
+    public Map<String, Integer> getNameIndexMap() {
+        return nameIndexMap;
     }
 
-    private static String printInitialGraph(final TimeFrameGraph timeFrameGraph) {
-        return printCompleteGraphAsJSON(timeFrameGraph);
-    }
-
-    private static String printCompleteGraphAsJSON(final TimeFrameGraph timeFrameGraph) {
-        Gson serializer = new Gson();
-        return serializer.toJson(timeFrameGraph);
+    public Map<Integer, Integer> getEdgesAsIndices() {
+        Map<Integer, Integer> allEdgesIndexBased = Maps.newHashMap();
+        for (GraphEdge edge : allEdges) {
+            allEdgesIndexBased.put(nameIndexMap.get(edge.getFrom()), nameIndexMap.get(edge.getTo()));
+        }
+        return allEdgesIndexBased;
     }
 
 }

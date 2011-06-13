@@ -91,57 +91,7 @@ public class NetworkBuilder {
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         printNodeAndLinkInfo(allLinksInNetwork);
-        //reduce nodes!
-       // Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-//        System.out.println("Before reduction: " + indegreeMatrix.size());
-//        List<String> reducedPages = Lists.newArrayList();
-//        for (Entry<String, List<String>> incommingInfo : indegreeMatrix.entrySet()) {
-//            if(incommingInfo.getValue().size() > 8) {
-//                reducedPages.add(incommingInfo.getKey());
-//            }
-//        }
-        //prepareGraphForBetweennessCalculation(allLinksInNetwork, reducedPages);
-        //calculateAndPrintBetweenness(graph);
     }
-
-//    private void prepareGraphForBetweennessCalculation(final List<GraphEdge> allLinksInNetwork,
-//                                                       final List<String> reducedPages) {
-//        Graph graph = new SingleGraph("Betweenness Test");
-//        for (String nodeName : reducedPages) {
-//            graph.addNode(nodeName);
-//        }
-//
-//        Set<GraphEdge> allEdgesAsSet = Sets.newHashSet();
-//        for (GraphEdge graphEdge : allLinksInNetwork) {
-//            allEdgesAsSet.add(graphEdge);
-//        }
-//
-//        for (GraphEdge graphEdge : allEdgesAsSet) {
-//            String from = graphEdge.getFrom();
-//            String to = graphEdge.getTo();
-//            String id = from + " -> " + to;
-//            String reverseID = to + " -> " + from;
-//            if(graph.getEdge(id) == null && graph.getEdge(reverseID) == null && reducedPages.contains(from) && reducedPages.contains(to)) {
-//                graph.addEdge(id, from, to, true);
-//            }
-//        }
-//    }
-
-//    private void calculateAndPrintBetweenness(final Graph graph) {
-//        BetweennessCentrality bcb = new BetweennessCentrality();
-//        bcb.registerProgressIndicator(new Progress() {
-//            public void progress(final float percent) {
-//                LOG.info("Working: " + percent + "%");
-//            }
-//        });
-//        bcb.setUnweighted();
-//        bcb.init(graph);
-//        bcb.compute();
-//
-//        for (org.graphstream.graph.Node graphNode : graph.getNodeSet()) {
-//            System.out.println(graphNode.getId() + "=" + graphNode.getInDegree() + "=" + graphNode.getAttribute("Cb"));
-//        }
-//    }
 
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
@@ -153,7 +103,6 @@ public class NetworkBuilder {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
-        //writeQualifiedNodesToFile(allQualifiedNodesInfo);
         List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
         FileUtils.writeLines(new File("out/bla_2011_Jan.txt"), output);
     }
@@ -169,12 +118,6 @@ public class NetworkBuilder {
         }
         return nodeQualified;
     }
-
-//    private void writeQualifiedNodesToFile(final List<String> allQualifiedNodesInfo) throws IOException {
-//        final DateTime dateTime = new DateTime();
-//        String fileName = "out/qualified_nodes_" + dateTime.getHourOfDay() + ":" + dateTime.getMinuteOfHour();
-//        FileUtils.writeLines(new File(fileName), allQualifiedNodesInfo);
-//    }
 
     private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
                                          final Map<String, Integer> nameIndexMap) {
