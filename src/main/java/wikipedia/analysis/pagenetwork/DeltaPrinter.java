@@ -18,8 +18,8 @@ public class DeltaPrinter {
 
     public static void main(final String[] args) {
         List<DateMidnight> allTimeFrames = Lists.newArrayList(new DateMidnight(2010, 12, 1),
-                                                          new DateMidnight(2011, 1, 1));//,
-//                                                          new DateMidnight(2011, 2, 1),
+                                                          new DateMidnight(2011, 1, 1),
+                                                          new DateMidnight(2011, 2, 1));//,
 //                                                          new DateMidnight(2011, 3, 1),
 //                                                          new DateMidnight(2011, 4, 1));
 
@@ -62,7 +62,13 @@ public class DeltaPrinter {
         TimeFrameGraph current = allFrameGraphs.get(index);
 
         GraphDelta test1 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
-        return Lists.newArrayList(test1);
+
+        index++;
+        old = allFrameGraphs.get(index - 1);
+        current = allFrameGraphs.get(index);
+
+        GraphDelta test2 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
+        return Lists.newArrayList(test1, test2);
     }
 
 
