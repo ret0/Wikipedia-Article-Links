@@ -57,20 +57,22 @@ public class DeltaPrinter {
         completeGraphJson.append("nodes: [");
 
         //print all nodes
+        List<String> allNodes = Lists.newArrayList();
         Set<String> allNodeNames = timeFrameGraph.getNameIndexMap().keySet();
         for (String nodeName : allNodeNames) {
             String fixedName = StringUtils.replace(nodeName, "\"", ""); // FIXME will break graph
-            completeGraphJson.append("{nodeName: \"" + fixedName + "\", group: 1}");
+            allNodes.add("{nodeName: \"" + fixedName + "\", group: 1}");
         }
-
+        completeGraphJson.append(StringUtils.join(allNodes, ", \n"));
         completeGraphJson.append("], links:[");
 
         //print all edges
+        List<String> allEdges = Lists.newArrayList();
         Map<String, Integer> nameIndexMap = timeFrameGraph.getNameIndexMap();
         for (GraphEdge edge : timeFrameGraph.getAllEdges()) {
-            completeGraphJson.append("{source: " + nameIndexMap.get(edge.getFrom()) + ", target: " + nameIndexMap.get(edge.getTo()) + ", value: " + 1 + "}");
+            allEdges.add("{source: " + nameIndexMap.get(edge.getFrom()) + ", target: " + nameIndexMap.get(edge.getTo()) + ", value: " + 1 + "}");
         }
-
+        completeGraphJson.append(StringUtils.join(allEdges, ", \n"));
 
         completeGraphJson.append("] };");
         return completeGraphJson.toString();
