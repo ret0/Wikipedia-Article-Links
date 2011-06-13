@@ -48,7 +48,7 @@ public class DeltaPrinter {
         allDeltasJson.append("var frameInformation = {");
         int deltaCounter = 1;
         for (GraphDelta graphDelta : allDeltas) {
-            deltaElements.add(deltaCounter + " : " + graphDelta.toJSON());
+            deltaElements.add(deltaCounter++ + " : " + graphDelta.toJSON());
         }
         allDeltasJson.append(StringUtils.join(deltaElements, ", \n"));
         allDeltasJson.append("}");
