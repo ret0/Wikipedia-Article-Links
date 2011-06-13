@@ -51,7 +51,7 @@ public class DeltaPrinter {
             deltaElements.add(deltaCounter++ + " : " + graphDelta.toJSON());
         }
         allDeltasJson.append(StringUtils.join(deltaElements, ", \n"));
-        allDeltasJson.append("}");
+        allDeltasJson.append("};");
         return allDeltasJson.toString();
 
     }

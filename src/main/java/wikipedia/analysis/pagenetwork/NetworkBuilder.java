@@ -68,6 +68,9 @@ public class NetworkBuilder {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
+
+        System.out.println(StringUtils.join(allQualifiedNodesInfo, "\n"));
+
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         // TODO loop not optimal
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
