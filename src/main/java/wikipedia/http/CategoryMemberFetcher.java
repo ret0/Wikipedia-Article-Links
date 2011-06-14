@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
+import wikipedia.analysis.pagenetwork.CategoryLists;
 import wikipedia.database.DBUtil;
 import wikipedia.xml.Api;
 import wikipedia.xml.CategoryMember;
@@ -34,6 +35,20 @@ public class CategoryMemberFetcher {
         this.database = database;
     }
 
+    public static void main(final String[] args) {
+        // manually refresh all category members
+        CategoryMemberFetcher cmf = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, "en", new DBUtil());
+        cmf.updateAllCategoryMembersInDB();
+    }
+
+    private void updateAllCategoryMembersInDB() {
+        for (String categoryName : categoryNames) {
+            final Map<Integer, String> allPageTitles = downloadCategoryMembers(categoryName);
+            database.storeAllCategoryMemberPages(categoryName, lang, allPageTitles);
+        }
+
+    }
+
     public Map<Integer, String> getAllPagesInAllCategories() {
         Map<Integer, String> allPageIDsAndTitles = Maps.newLinkedHashMap();
         for (String categoryName : categoryNames) {
@@ -47,7 +62,7 @@ public class CategoryMemberFetcher {
             return getMembersFromDBCache(categoryName);
         } else {
             final Map<Integer, String> allPageTitles = downloadCategoryMembers(categoryName);
-            database.storeAllCategoryMemberPages(categoryName, allPageTitles);
+            database.storeAllCategoryMemberPages(categoryName, lang, allPageTitles);
             return allPageTitles;
         }
     }

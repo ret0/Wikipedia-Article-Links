@@ -12,9 +12,6 @@ public class FirstRevisionFetcher {
 
     private final static Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
 
-    //private final DefaultHttpClient httpclient = new DefaultHttpClient();
-    //private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpclient);
-
     private final String pageTitle;
     private final String lang;
 

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -16,7 +17,13 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import wikipedia.http.FirstRevisionFetcher;
+import wikipedia.http.WikiAPIClient;
 import wikipedia.network.PageLinkInfo;
 
 import com.google.common.base.Function;
@@ -40,38 +47,50 @@ public class DBUtil {
     private static final String INSERT_PAGE_STMT = "INSERT INTO pages (page_id, page_title, creation_date) VALUES (?, ?, ?)";
 
     private final SimpleJdbcTemplate jdbcTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     public DBUtil() {
         XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("context.xml"));
         jdbcTemplate = new SimpleJdbcTemplate((BasicDataSource) beanFactory.getBean("dataSource"));
+        DataSourceTransactionManager dstm = new DataSourceTransactionManager((BasicDataSource) beanFactory.getBean("dataSource"));
+        transactionTemplate = new TransactionTemplate(dstm);
     }
 
     public void storePageLinkInfo(final PageLinkInfo pliToBeStored,
                                   final DateTime firstRevisionDate) {
         // if page entry already there, only store revision
         // FIXME performance
-        int numberOfPageEntries = jdbcTemplate.queryForInt(SELECT_PAGE_COUNT,
+        final int numberOfPageEntries = jdbcTemplate.queryForInt(SELECT_PAGE_COUNT,
                 new Object[] { pliToBeStored.getPageID() });
         final String timeStamp = pliToBeStored.getTimeStamp().toString(MYSQL_DATETIME_FORMATTER);
         final String firstRevisionDateTime = firstRevisionDate.toString(MYSQL_DATETIME_FORMATTER);
 
-        if (numberOfPageEntries == 0) {
-            jdbcTemplate.update(INSERT_PAGE_STMT, new Object[] { pliToBeStored.getPageID(),
-                    pliToBeStored.getPageTitle(), firstRevisionDateTime });
-        }
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
-        for (String outgoingLink : pliToBeStored.getLinks()) {
-            try {
-                jdbcTemplate
-                        .queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
-                                new Object[] { outgoingLink, timeStamp, pliToBeStored.getPageID() });
-            } catch (EmptyResultDataAccessException e) {
-                if(outgoingLink.length() < MAX_TITLE_LENGTH) {
-                    jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
-                            new Object[] { pliToBeStored.getPageID(), outgoingLink, timeStamp });
+            @Override
+            protected void doInTransactionWithoutResult(final TransactionStatus status) {
+                if (numberOfPageEntries == 0) {
+                    jdbcTemplate.update(INSERT_PAGE_STMT, new Object[] { pliToBeStored.getPageID(),
+                            pliToBeStored.getPageTitle(), firstRevisionDateTime });
+                }
+
+                for (String outgoingLink : pliToBeStored.getLinks()) {
+                    try {
+                        jdbcTemplate
+                                .queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
+                                        new Object[] { outgoingLink, timeStamp, pliToBeStored.getPageID() });
+                    } catch (EmptyResultDataAccessException e) {
+                        if(outgoingLink.length() < MAX_TITLE_LENGTH) {
+                            jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
+                                    new Object[] { pliToBeStored.getPageID(), outgoingLink, timeStamp });
+                        }
+                    }
                 }
             }
-        }
+
+        });
+
+
     }
 
     public String getFirstRevisionDate(final int pageId,
@@ -89,10 +108,9 @@ public class DBUtil {
                                                  final DateTime revisionDate) {
         int numRows = jdbcTemplate.queryForInt(
                 "SELECT COUNT(0) FROM outgoing_links WHERE revision_date = ? AND src_page_id = ?",
-                new Object[] {
-                        revisionDate.toString(DateTimeFormat.forPattern(DBUtil.MYSQL_DATETIME)),
-                        pageId });
-        return numRows == 0;
+                new Object[] { revisionDate.toString(DateTimeFormat.forPattern(DBUtil.MYSQL_DATETIME)), pageId });
+        //return numRows < ;//XXX could lead to incomplete link collections
+        return true;
     }
 
     public Collection<String> getAllLinksForRevision(final int pageId,
@@ -114,6 +132,7 @@ public class DBUtil {
     }
 
     public void storeAllCategoryMemberPages(final String categoryName,
+                                            final String lang,
                                             final Map<Integer, String> allPageTitles) {
         int categoryID = -1;
         try {
@@ -127,12 +146,28 @@ public class DBUtil {
         categoryID = jdbcTemplate.queryForInt(
                 "SELECT category_id FROM categories WHERE category_name = ?",
                 new Object[] { categoryName });
+
+
+
         for (Entry<Integer, String> entry : allPageTitles.entrySet()) {
-            LOG.info("-- " + entry);
+
+            //make sure page entry exists!
+            final Integer pageId = entry.getKey();
+            final String pageTitle = entry.getValue();
+            int pageSearchResults = jdbcTemplate.queryForInt("SELECT COUNT(0) FROM pages WHERE page_id = ?", new Object[] {pageId});
+            if(pageSearchResults == 0) {
+                final FirstRevisionFetcher firstRevisionFetcher = new FirstRevisionFetcher(pageTitle, lang, new WikiAPIClient(new DefaultHttpClient()));
+                DateTime firstRevisionDate = firstRevisionFetcher.getFirstRevisionDate();
+                String dateString = firstRevisionDate.toString(DateTimeFormat.forPattern(DBUtil.MYSQL_DATETIME));
+                jdbcTemplate.update("INSERT INTO pages (page_id, page_title, creation_date) VALUES (?, ?, ?)", pageId, pageTitle, dateString);
+                LOG.info("NEW STORAGE: " + pageTitle);
+            }
+
             try {
                 jdbcTemplate.update(
                         "INSERT INTO pages_in_categories (page_id, category_id) VALUES (?, ?)",
-                        new Object[] { entry.getKey(), categoryID });
+                        new Object[] { pageId, categoryID });
+              //  LOG.info("WROTE NEW: " + entry);
             } catch (DataIntegrityViolationException e) {
                 e.printStackTrace();
                 LOG.error("IGNORING ARTICLE: " + entry + " (probably too new!)");
