@@ -39,7 +39,7 @@ public class GraphDelta {
     }
 
     private String printLink(final GraphEdge link) {
-        return "{ source: \"" + link.getFrom() + "\", target: \"" + link.getTo() + "\", value: 2 }";
+        return "{ source: \"" + link.getFrom() + "\", target: \"" + link.getTo() + "\", value: 1 }";
     }
 
     private String printAllDelNodes() {

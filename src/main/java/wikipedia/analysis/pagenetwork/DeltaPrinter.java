@@ -1,9 +1,13 @@
 package wikipedia.analysis.pagenetwork;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 
@@ -16,12 +20,12 @@ import com.google.common.collect.Sets;
 
 public class DeltaPrinter {
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         List<DateMidnight> allTimeFrames = Lists.newArrayList(new DateMidnight(2010, 12, 1),
                                                           new DateMidnight(2011, 1, 1),
-                                                          new DateMidnight(2011, 2, 1));//,
-//                                                          new DateMidnight(2011, 3, 1),
-//                                                          new DateMidnight(2011, 4, 1));
+                                                          new DateMidnight(2011, 2, 1),
+                                                          new DateMidnight(2011, 3, 1),
+                                                          new DateMidnight(2011, 4, 1));
 
         final List<String> categories = CategoryLists.ENGLISH_MUSIC;
         Map<DateMidnight, TimeFrameGraph> dateGraphMap = Maps.newHashMap();
@@ -30,7 +34,9 @@ public class DeltaPrinter {
             dateGraphMap.put(dateTime, new NetworkBuilder(categories, "en", dateTime).getGraphAtDate());
         }
 
-        System.out.println(generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values())));
+        //System.out.println(generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values())));
+        String completeJSONForPage = generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values()));
+        FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
 
 
@@ -57,18 +63,21 @@ public class DeltaPrinter {
     }
 
     private static List<GraphDelta> prepareGraphDeltas(final List<TimeFrameGraph> allFrameGraphs) {
-        int index = 1;
-        TimeFrameGraph old = allFrameGraphs.get(index - 1);
-        TimeFrameGraph current = allFrameGraphs.get(index);
+        //int index = 1;
+        ArrayList<GraphDelta> allDeltas = Lists.newArrayList();
+        for (int index = 1; index < allFrameGraphs.size(); index++) {
+            TimeFrameGraph old = allFrameGraphs.get(index - 1);
+            TimeFrameGraph current = allFrameGraphs.get(index);
+            allDeltas.add(new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges()));
+        }
+        return allDeltas;
 
-        GraphDelta test1 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
+//        index++;
+  //      old = allFrameGraphs.get(index - 1);
+   //     current = allFrameGraphs.get(index);
 
-        index++;
-        old = allFrameGraphs.get(index - 1);
-        current = allFrameGraphs.get(index);
-
-        GraphDelta test2 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
-        return Lists.newArrayList(test1, test2);
+        //GraphDelta test2 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
+        //return Lists.newArrayList(test1, test2);
     }
 
 

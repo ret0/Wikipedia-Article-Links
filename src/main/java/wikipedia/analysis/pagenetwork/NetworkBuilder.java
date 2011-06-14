@@ -1,7 +1,5 @@
 package wikipedia.analysis.pagenetwork;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -12,8 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +27,6 @@ public class NetworkBuilder {
 
     private final static Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
 
-    private final List<String> categories;
-    private final String lang;
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 120;
@@ -44,32 +38,26 @@ public class NetworkBuilder {
 
     public NetworkBuilder(final List<String> categories, final String lang,
             final DateMidnight dateMidnight) {
-        this.categories = categories;
-        this.lang = lang;
         this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
-        .getAllPagesInAllCategories();
+        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database).getAllPagesInAllCategories();
     }
 
-    public static void main(final String[] args) throws IOException {
+  /*  public static void main(final String[] args) throws IOException {
         final String lang = "en";
         NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, new DateMidnight(2011, 1, 1));
         nb.printNetworkData();
-    }
+    }*/
 
     public TimeFrameGraph getGraphAtDate() {
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-        Map<String, Integer> nameIndexMap = Maps.newTreeMap();
+        Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;
-        List<String> allQualifiedNodesInfo = Lists.newArrayList();
         for (String targetPage : indegreeMatrix.keySet()) {
-            if(nodeQualifiedForGraph(indegreeMatrix, targetPage, allQualifiedNodesInfo) && !nameIndexMap.containsKey(targetPage)) {
+            if(nodeQualifiedForGraph(indegreeMatrix, targetPage) && !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
-
-        System.out.println(StringUtils.join(allQualifiedNodesInfo, "\n"));
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         // TODO loop not optimal
@@ -85,17 +73,17 @@ public class NetworkBuilder {
                 }
             }
         }
-        System.out.println("Number of Edges: " + edgeOutput.size());
         return new TimeFrameGraph(nameIndexMap, edgeOutput);
     }
 
-    private void printNetworkData() throws IOException {
+   /* private void printNetworkData() throws IOException {
         Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
                 .getAllPagesInAllCategories(); //key = wiki page id, value = name
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         printNodeAndLinkInfo(allLinksInNetwork);
-    }
+    }*/
 
+    /*
     private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newTreeMap();
@@ -108,21 +96,17 @@ public class NetworkBuilder {
         }
         List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
         FileUtils.writeLines(new File("out/bla_2011_Jan.txt"), output);
-    }
+    }*/
 
     private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
-                                          final String targetPage,
-                                          final List<String> allQualifiedNodesInfo) {
+                                          final String targetPage) {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        if (inDegree >= 100) {
-            allQualifiedNodesInfo.add(targetPage + "=" + inDegree);
-        }
         return nodeQualified;
     }
 
-    private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
+    /*private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
                                          final Map<String, Integer> nameIndexMap) {
         List<String> output = Lists.<String> newArrayList();
         output.add("var initialGraph = {");
@@ -132,9 +116,9 @@ public class NetworkBuilder {
         output.add(writeAllEdges(indegreeMatrix, nameIndexMap));
         output.add("] };");
         return output;
-    }
+    }*/
 
-    private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
+    /*private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
                                  final Map<String, Integer> nameIndexMap) {
         List<String> edgeOutput = Lists.newArrayList();
         // TODO loop not optimal
@@ -166,7 +150,7 @@ public class NetworkBuilder {
         String fixedName = StringUtils.replace(name, "\"", ""); // FIXME will
                                                                 // break graph!
         output.add("{nodeName: \"" + fixedName + "\", group: 1}");
-    }
+    }*/
 
     private Map<String, List<String>> initIndegreeMatrix(final List<GraphEdge> allLinksInNetwork) {
         // In-degree matrix key:target_page, value:source_page
