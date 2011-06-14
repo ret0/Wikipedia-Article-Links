@@ -21,7 +21,13 @@ import com.google.common.collect.Sets;
 public class DeltaPrinter {
 
     public static void main(final String[] args) throws IOException {
-        List<DateMidnight> allTimeFrames = Lists.newArrayList(new DateMidnight(2010, 12, 1),
+        List<DateMidnight> allTimeFrames = Lists.newArrayList(
+                                                          new DateMidnight(2010, 7, 1),
+                                                          new DateMidnight(2010, 8, 1),
+                                                          new DateMidnight(2010, 9, 1),
+                                                          new DateMidnight(2010, 10, 1),
+                                                          new DateMidnight(2010, 11, 1),
+                                                          new DateMidnight(2010, 12, 1),
                                                           new DateMidnight(2011, 1, 1),
                                                           new DateMidnight(2011, 2, 1),
                                                           new DateMidnight(2011, 3, 1),
@@ -34,7 +40,6 @@ public class DeltaPrinter {
             dateGraphMap.put(dateTime, new NetworkBuilder(categories, "en", dateTime).getGraphAtDate());
         }
 
-        //System.out.println(generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values())));
         String completeJSONForPage = generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values()));
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
