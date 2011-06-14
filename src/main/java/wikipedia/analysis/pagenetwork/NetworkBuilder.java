@@ -85,7 +85,7 @@ public class NetworkBuilder {
                 }
             }
         }
-
+        System.out.println("Number of Edges: " + edgeOutput.size());
         return new TimeFrameGraph(nameIndexMap, edgeOutput);
     }
 
