@@ -24,7 +24,7 @@ import com.google.common.collect.Lists;
 public class PageHistoryFetcher {
 
     private static final int DELTA_MONTHS = 1;
-    private static final int MAX_YEARS = 1;
+    private static final int MAX_YEARS = 2;
 
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
@@ -105,33 +105,7 @@ public class PageHistoryFetcher {
     public static void main(final String[] args) {
         final String lang = "en";
         new PageHistoryFetcher(new DBUtil()).fetchCompleteCategories(lang);
-        //long startTime = System.currentTimeMillis();
-        //fetchSingleArticle("Aja Kim", lang);
-        //System.out.println(((System.currentTimeMillis() - startTime)/1000));
     }
-
-    /*private static void fetchSingleArticle(final String pageName, final String lang) {
-        final PageHistoryFetcher pageHistoryFetcher = new PageHistoryFetcher(new DBUtil());
-        final Entry<Integer, String> pageEntry = new Entry<Integer, String>() {
-
-            public String setValue(final String arg0) {
-                return null;
-            }
-
-            public String getValue() {
-                return pageName;
-            }
-
-            public Integer getKey() {
-                return 12748191;
-            }
-        };
-        try {
-                pageHistoryFetcher.getThreadPool().execute(new ExecutorTask(pageHistoryFetcher, lang, pageEntry, 1));
-        } finally  {
-            pageHistoryFetcher.shutdownThreadPool();
-        }
-    }*/
 
     private void fetchCompleteCategories(final String lang) {
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, lang, dataBaseUtil).getAllPagesInAllCategories();
