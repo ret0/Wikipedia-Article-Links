@@ -63,29 +63,15 @@ public class DBUtil {
         for (String outgoingLink : pliToBeStored.getLinks()) {
             try {
                 jdbcTemplate
-                        .queryForInt(
-                                "SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
+                        .queryForInt("SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
                                 new Object[] { outgoingLink, timeStamp, pliToBeStored.getPageID() });
             } catch (EmptyResultDataAccessException e) {
                 if(outgoingLink.length() < MAX_TITLE_LENGTH) {
-                    jdbcTemplate
-                    .update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
+                    jdbcTemplate.update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
                             new Object[] { pliToBeStored.getPageID(), outgoingLink, timeStamp });
                 }
             }
         }
-
-        /*
-         * int numberOfRevisionEntries =
-         * jdbcTemplate.queryForInt(SELECT_REVISION_COUNT, new Object[]
-         * {timeStamp, pliToBeStored.getPageID()});
-         *
-         * if(numberOfRevisionEntries == 0) {
-         * jdbcTemplate.update(INSERT_REVISION_STMT, new Object[] {
-         * pliToBeStored.getRevisionID(), timeStamp, pliToBeStored.getPageID(),
-         * pliToBeStored.getLinksAsString() }); }
-         */
-
     }
 
     public String getFirstRevisionDate(final int pageId,

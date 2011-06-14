@@ -42,12 +42,6 @@ public class NetworkBuilder {
         allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database).getAllPagesInAllCategories();
     }
 
-  /*  public static void main(final String[] args) throws IOException {
-        final String lang = "en";
-        NetworkBuilder nb = new NetworkBuilder(CategoryLists.ENGLISH_MUSIC, lang, new DateMidnight(2011, 1, 1));
-        nb.printNetworkData();
-    }*/
-
     public TimeFrameGraph getGraphAtDate() {
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
@@ -214,7 +208,7 @@ public class NetworkBuilder {
         }
 
         public void run() {
-            if (counter % 1000 == 0) {
+            if (counter % 4000 == 0) {
                 LOG.info("Task: " + counter);
             }
             Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);

@@ -71,15 +71,7 @@ public class DeltaPrinter {
             allDeltas.add(new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges()));
         }
         return allDeltas;
-
-//        index++;
-  //      old = allFrameGraphs.get(index - 1);
-   //     current = allFrameGraphs.get(index);
-
-        //GraphDelta test2 = new GraphDelta(prepareAddList(old, current), prepareDelList(old, current), current.getAllEdges());
-        //return Lists.newArrayList(test1, test2);
     }
-
 
     private static List<String> prepareDelList(final TimeFrameGraph old,
                                                final TimeFrameGraph current) {
