@@ -17,7 +17,6 @@ import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 /**
@@ -38,22 +37,18 @@ public final class DeltaPrinter {
         List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(NUM_REVISIONS,
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
 
-        final List<String> categories = CategoryLists.ENGLISH_MUSIC;
-        DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames);
+        DeltaPrinter dp = new DeltaPrinter(CategoryLists.ENGLISH_MUSIC, allTimeFrames);
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
 
     private String buildNetworksAndGenerateInfo() {
-        Map<DateMidnight, TimeFrameGraph> dateGraphMap = Maps.newHashMap();
+        List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
         for (DateTime dateTime : allTimeFrames) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
-            dateGraphMap.put(dateMidnight,
-                    new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate());
+            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate());
         }
-        String completeJSONForPage = generateTimeFrameInformation(Lists.newArrayList(dateGraphMap
-                .values()));
-        return completeJSONForPage;
+        return generateTimeFrameInformation(dateGraphMap);
     }
 
     public String generateTimeFrameInformation(final List<TimeFrameGraph> allFrameGraphs) {
