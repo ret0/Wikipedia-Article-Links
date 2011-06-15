@@ -109,8 +109,7 @@ public class DBUtil {
         int numRows = jdbcTemplate.queryForInt(
                 "SELECT COUNT(0) FROM outgoing_links WHERE revision_date = ? AND src_page_id = ?",
                 new Object[] { revisionDate.toString(DateTimeFormat.forPattern(DBUtil.MYSQL_DATETIME)), pageId });
-        return numRows < 5;//XXX could lead to incomplete link collections
-        //return true;
+        return numRows == 0;
     }
 
     public Collection<String> getAllLinksForRevision(final int pageId,

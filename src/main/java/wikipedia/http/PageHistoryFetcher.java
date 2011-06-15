@@ -23,8 +23,7 @@ import com.google.common.collect.Lists;
 
 public class PageHistoryFetcher {
 
-    private static final int DELTA_MONTHS = 1;
-    private static final int MAX_YEARS = 1;
+    private static final int MAX_MONTHS = 10;
 
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
@@ -49,11 +48,16 @@ public class PageHistoryFetcher {
 
     private List<DateTime> getAllDatesForHistory(final DateMidnight latestDate) {
         List<DateTime> allDatesToFetch = Lists.newArrayList();
-        DateTime earliestDate = latestDate.minusYears(MAX_YEARS).toDateTime();
-        while (earliestDate.isBefore(latestDate)) {
-            allDatesToFetch.add(earliestDate);
-            earliestDate = earliestDate.plusMonths(DELTA_MONTHS);
+        for (int months = 0; months < MAX_MONTHS; months++) {
+            allDatesToFetch.add(latestDate.toDateTime().minusMonths(months));
         }
+
+//        DateTime earliestDate = latestDate.minusYears(MAX_YEARS).toDateTime();
+//        while (earliestDate.isBefore(latestDate)) {
+//            allDatesToFetch.add(earliestDate);
+//            earliestDate = earliestDate.plusMonths(DELTA_MONTHS);
+//        }
+        System.out.println("Fetching: " + StringUtils.join(allDatesToFetch, "\n"));
         return allDatesToFetch;
     }
 
