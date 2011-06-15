@@ -95,7 +95,7 @@ public final class NetworkBuilder {
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
         final float magicNumber = ((float) inDegree / (float) numberOfLinks) * 1000;
         final boolean nodeQualified = magicNumber >= 1.5f;
-        if(inDegree > 100 || targetPage.equals("Justin Biber") || targetPage.equals("Lady Gaga")) {
+        if(inDegree > 100 || targetPage.equals("Justin Bieber") || targetPage.equals("Lady Gaga")) {
             nodeDebug.add(targetPage + "=" + inDegree + "=" + magicNumber);
         }
         return nodeQualified;
