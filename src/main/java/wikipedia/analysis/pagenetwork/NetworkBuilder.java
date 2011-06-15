@@ -1,7 +1,5 @@
 package wikipedia.analysis.pagenetwork;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,24 +46,18 @@ public final class NetworkBuilder {
                               .getAllPagesInAllCategories();
                   }
 
-    public TimeFrameGraph getGraphAtDate() {
+    public TimeFrameGraph getGraphAtDate(final List<String> nodeDebug) {
             List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;
         final int numberOfLinks = allLinksInNetwork.size();
-        List<String> nodeDebug = Lists.newArrayList("Graph Size----- " + numberOfLinks);
+        //List<String> nodeDebug = Lists.newArrayList("Graph Size----- " + numberOfLinks);
         for (String targetPage : indegreeMatrix.keySet()) {
             if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug, numberOfLinks)
                     && !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
-        }
-
-        try {
-            FileUtils.writeLines(new File("out/degreeOutput" + revisionDateTime + ".txt"), nodeDebug);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
@@ -95,8 +86,8 @@ public final class NetworkBuilder {
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
         final float magicNumber = ((float) inDegree / (float) numberOfLinks) * 1000;
         final boolean nodeQualified = magicNumber >= 1.5f;
-        if(inDegree > 100 || targetPage.equals("Justin Bieber") || targetPage.equals("Lady Gaga")) {
-            nodeDebug.add(targetPage + "=" + inDegree + "=" + magicNumber);
+        if(targetPage.equals("Michael Jackson") || targetPage.equals("Justin Bieber") || targetPage.equals("Lady Gaga")) {
+            nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + inDegree + "=" + magicNumber);
         }
         return nodeQualified;
     }
