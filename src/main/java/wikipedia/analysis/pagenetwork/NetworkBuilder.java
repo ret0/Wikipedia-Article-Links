@@ -33,7 +33,7 @@ public final class NetworkBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
 
-    //private final String revisionDateTime;
+    private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 120;
 
@@ -42,15 +42,15 @@ public final class NetworkBuilder {
 
     private final Map<Integer, String> allPagesInNetwork;
 
-    public NetworkBuilder(final List<String> categories, final String lang) {
-        //this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
-                .getAllPagesInAllCategories();
-    }
+    public NetworkBuilder(final List<String> categories, final String lang,
+                          final DateMidnight dateMidnight) {
+                      this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+                      allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
+                              .getAllPagesInAllCategories();
+                  }
 
-    public TimeFrameGraph getGraphAtDate(final DateMidnight dateMidnight) {
-        String revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
+    public TimeFrameGraph getGraphAtDate() {
+            List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;

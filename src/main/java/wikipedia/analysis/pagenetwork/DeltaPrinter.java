@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 
 import wikipedia.http.PageHistoryFetcher;
@@ -43,9 +44,9 @@ public final class DeltaPrinter {
 
     private String buildNetworksAndGenerateInfo() {
         List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
-        final NetworkBuilder networkBuilder = new NetworkBuilder(categories, "en");
         for (DateTime dateTime : allTimeFrames) {
-            dateGraphMap.add(networkBuilder.getGraphAtDate(dateTime.toDateMidnight()));
+            DateMidnight dateMidnight = dateTime.toDateMidnight();
+            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate());
         }
         return generateTimeFrameInformation(dateGraphMap);
     }
