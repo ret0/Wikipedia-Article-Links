@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
  */
 public final class PageHistoryFetcher {
 
-    public static final int MAX_MONTHS = 13;
+    public static final int MAX_MONTHS = 14;
     public static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
 
     private static final int THREAD_SLEEP_MSEC = 1200;
