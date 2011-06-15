@@ -93,9 +93,10 @@ public final class NetworkBuilder {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        final boolean nodeQualified = ((float) inDegree / (float) numberOfLinks) >= 1.5f;
+        final float magicNumber = ((float) inDegree / (float) numberOfLinks) * 1000;
+        final boolean nodeQualified = magicNumber >= 1.5f;
         if(inDegree > 100) {
-            nodeDebug.add(targetPage + "=" + inDegree + "=" + ((float) inDegree / (float) numberOfLinks));
+            nodeDebug.add(targetPage + "=" + inDegree + "=" + magicNumber);
         }
         return nodeQualified;
     }
