@@ -18,18 +18,17 @@ import com.google.common.collect.Maps;
 
 public class CategoryMemberFetcher {
 
-    private final static Logger LOG = LoggerFactory.getLogger(CategoryMemberFetcher.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CategoryMemberFetcher.class.getName());
 
     private final DefaultHttpClient httpclient = new DefaultHttpClient();
     private final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpclient);
 
     private final List<String> categoryNames;
     private final String lang;
-
     private final DBUtil database;
 
-
-    public CategoryMemberFetcher(final List<String> categoryNames, final String lang, final DBUtil database) {
+    public CategoryMemberFetcher(final List<String> categoryNames, final String lang,
+            final DBUtil database) {
         this.categoryNames = categoryNames;
         this.lang = lang;
         this.database = database;
@@ -37,7 +36,8 @@ public class CategoryMemberFetcher {
 
     public static void main(final String[] args) {
         // manually refresh all category members
-        CategoryMemberFetcher cmf = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, "en", new DBUtil());
+        CategoryMemberFetcher cmf = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, "en",
+                new DBUtil());
         cmf.updateAllCategoryMembersInDB();
     }
 
@@ -58,8 +58,8 @@ public class CategoryMemberFetcher {
     }
 
     private Map<Integer, String> getAllPagesInSingleCategory(final String categoryName) {
-        if(categoryMembersInCache(categoryName)) {
-            return getMembersFromDBCache(categoryName);
+        if (database.categoryMembersInDatabase(categoryName)) {
+            return database.getCategoryMembersByCategoryName(categoryName);
         } else {
             final Map<Integer, String> allPageTitles = downloadCategoryMembers(categoryName);
             database.storeAllCategoryMemberPages(categoryName, lang, allPageTitles);
@@ -67,19 +67,11 @@ public class CategoryMemberFetcher {
         }
     }
 
-    private boolean categoryMembersInCache(final String categoryName) {
-        return database.categoryMembersInDatabase(categoryName);
-    }
-
-    private Map<Integer, String> getMembersFromDBCache(final String categoryName) {
-        return database.getCategoryMembersByCategoryName(categoryName);
-    }
-
     private Map<Integer, String> downloadCategoryMembers(final String categoryName) {
         Map<Integer, String> allPageTitles = Maps.newLinkedHashMap();
         Api revisionResult = null;
         String queryContinue = "";
-        while(true) {
+        while (true) {
             final String url = getURL(categoryName, queryContinue);
             LOG.info("Fetching URL: " + url);
             final String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
@@ -90,18 +82,21 @@ public class CategoryMemberFetcher {
             if (revisionResult.getQueryContinue() == null) {
                 break;
             } else {
-                queryContinue = revisionResult.getQueryContinue().getCategorymembers().getCmcontinue();
+                queryContinue = revisionResult.getQueryContinue().getCategorymembers()
+                        .getCmcontinue();
             }
         }
         return allPageTitles;
     }
 
-    private String getURL(final String categoryName, final String queryContinue) {
+    private String getURL(final String categoryName,
+                          final String queryContinue) {
         final String encodedCategoryName = HTTPUtil.URLEncode(categoryName);
         final String encodedqueryContinue = HTTPUtil.URLEncode(queryContinue);
-        return "http://" + lang +
-        ".wikipedia.org/w/api.php?format=xml&action=query&cmlimit=500&list=categorymembers&cmtitle="
-        + encodedCategoryName + "&cmnamespace=0&cmcontinue=" + encodedqueryContinue;
+        return "http://"
+                + lang
+                + ".wikipedia.org/w/api.php?format=xml&action=query&cmlimit=500&list=categorymembers&cmtitle="
+                + encodedCategoryName + "&cmnamespace=0&cmcontinue=" + encodedqueryContinue;
     }
 
 }

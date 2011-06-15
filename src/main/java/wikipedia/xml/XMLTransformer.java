@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 public class XMLTransformer {
 
-    private final static Logger LOG = LoggerFactory.getLogger(XMLTransformer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(XMLTransformer.class.getName());
 
     private static final Persister PERSISTER = new Persister();
 

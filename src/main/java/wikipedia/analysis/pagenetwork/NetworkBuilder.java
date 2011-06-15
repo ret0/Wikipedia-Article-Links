@@ -25,7 +25,7 @@ import com.google.common.collect.Sets;
 
 public class NetworkBuilder {
 
-    private final static Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
 
     private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
@@ -39,7 +39,8 @@ public class NetworkBuilder {
     public NetworkBuilder(final List<String> categories, final String lang,
             final DateMidnight dateMidnight) {
         this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database).getAllPagesInAllCategories();
+        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
+                .getAllPagesInAllCategories();
     }
 
     public TimeFrameGraph getGraphAtDate() {
@@ -48,7 +49,8 @@ public class NetworkBuilder {
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;
         for (String targetPage : indegreeMatrix.keySet()) {
-            if(nodeQualifiedForGraph(indegreeMatrix, targetPage) && !nameIndexMap.containsKey(targetPage)) {
+            if (nodeQualifiedForGraph(indegreeMatrix, targetPage)
+                    && !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }
@@ -62,7 +64,8 @@ public class NetworkBuilder {
                 if (sourcePageName.equals(targetPageName)) {
                     continue;
                 }
-                if (nameIndexMap.get(sourcePageName) != null && nameIndexMap.get(targetPageName) != null) {
+                if (nameIndexMap.get(sourcePageName) != null
+                        && nameIndexMap.get(targetPageName) != null) {
                     edgeOutput.add(new GraphEdge(sourcePageName, targetPageName));
                 }
             }
@@ -70,27 +73,6 @@ public class NetworkBuilder {
         return new TimeFrameGraph(nameIndexMap, edgeOutput);
     }
 
-   /* private void printNetworkData() throws IOException {
-        Map<Integer, String> allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
-                .getAllPagesInAllCategories(); //key = wiki page id, value = name
-        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
-        printNodeAndLinkInfo(allLinksInNetwork);
-    }*/
-
-    /*
-    private void printNodeAndLinkInfo(final List<GraphEdge> allLinksInNetwork) throws IOException {
-        Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-        Map<String, Integer> nameIndexMap = Maps.newTreeMap();
-        int nodeIndex = 0;
-        List<String> allQualifiedNodesInfo = Lists.newArrayList();
-        for (String targetPage : indegreeMatrix.keySet()) {
-            if(nodeQualifiedForGraph(indegreeMatrix, targetPage, allQualifiedNodesInfo) && !nameIndexMap.containsKey(targetPage)) {
-                nameIndexMap.put(targetPage, nodeIndex++);
-            }
-        }
-        List<String> output = writeJSONResult(indegreeMatrix, nameIndexMap);
-        FileUtils.writeLines(new File("out/bla_2011_Jan.txt"), output);
-    }*/
 
     private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
                                           final String targetPage) {
@@ -99,52 +81,6 @@ public class NetworkBuilder {
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
         return nodeQualified;
     }
-
-    /*private List<String> writeJSONResult(final Map<String, List<String>> indegreeMatrix,
-                                         final Map<String, Integer> nameIndexMap) {
-        List<String> output = Lists.<String> newArrayList();
-        output.add("var initialGraph = {");
-        output.add("nodes: [");
-        output.add(writeAllNodes(nameIndexMap.keySet()));
-        output.add("], links:[");
-        output.add(writeAllEdges(indegreeMatrix, nameIndexMap));
-        output.add("] };");
-        return output;
-    }*/
-
-    /*private String writeAllEdges(final Map<String, List<String>> indegreeMatrix,
-                                 final Map<String, Integer> nameIndexMap) {
-        List<String> edgeOutput = Lists.newArrayList();
-        // TODO loop not optimal
-        for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
-            String targetPageName = entry.getKey();
-            List<String> incommingLinks = entry.getValue();
-            for (String sourcePageName : incommingLinks) {
-                if (sourcePageName.equals(targetPageName)) {
-                    continue;
-                }
-                if (nameIndexMap.get(sourcePageName) != null && nameIndexMap.get(targetPageName) != null) {
-                    edgeOutput.add("{source: " + nameIndexMap.get(sourcePageName) + ", target: " + nameIndexMap.get(targetPageName) + ", value: " + 1 + "}");
-                }
-            }
-        }
-        return StringUtils.join(edgeOutput, ", \n");
-    }
-
-    private String writeAllNodes(final Set<String> allPageNames) {
-        List<String> nodeOutput = Lists.newArrayList();
-        for (String nodeName : allPageNames) {
-            writeNode(nodeOutput, nodeName);
-        }
-        return StringUtils.join(nodeOutput, ", \n");
-    }
-
-    private void writeNode(final List<String> output,
-                                  final String name) {
-        String fixedName = StringUtils.replace(name, "\"", ""); // FIXME will
-                                                                // break graph!
-        output.add("{nodeName: \"" + fixedName + "\", group: 1}");
-    }*/
 
     private Map<String, List<String>> initIndegreeMatrix(final List<GraphEdge> allLinksInNetwork) {
         // In-degree matrix key:target_page, value:source_page
@@ -164,14 +100,16 @@ public class NetworkBuilder {
 
     private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetwork) {
         Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetwork.values());
-        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists.<GraphEdge>newArrayList());
+        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists
+                .<GraphEdge> newArrayList());
         LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
         int taskCounter = 1;
         try {
             for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
-                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName, allLinksInNetwork, taskCounter++));
+                threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName,
+                        allLinksInNetwork, taskCounter++));
             }
         } finally {
             shutdownThreadPool();
@@ -187,7 +125,7 @@ public class NetworkBuilder {
             LOG.error("Error while shutting down Threadpool", e);
         }
         while (!threadPool.isTerminated()) {
-            // wait for all tasks or timeout
+            LOG.debug("Waiting for all Tasks to terminate");
         }
     }
 
@@ -211,7 +149,8 @@ public class NetworkBuilder {
             if (counter % 4000 == 0) {
                 LOG.info("Task: " + counter);
             }
-            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
+            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId,
+                    revisionDateTime);
             for (String outgoingLink : allOutgoingLinksOnPage) {
                 if (allPageNamesInNetwork.contains(outgoingLink)) {
                     allLinksInNetwork.add(new GraphEdge(pageName, outgoingLink));

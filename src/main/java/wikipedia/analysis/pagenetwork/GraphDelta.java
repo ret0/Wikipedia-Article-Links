@@ -8,6 +8,9 @@ import wikipedia.network.GraphEdge;
 
 import com.google.common.collect.Lists;
 
+/**
+ * Bean to create JSON output for the differences between two animation frames.
+ */
 public class GraphDelta {
 
     private final List<String> add;
@@ -32,7 +35,7 @@ public class GraphDelta {
 
     private String printAllLinks() {
         List<String> nodes = Lists.newArrayList();
-        for (GraphEdge link: links) {
+        for (GraphEdge link : links) {
             nodes.add(printLink(link));
         }
         return StringUtils.join(nodes, ", \n");

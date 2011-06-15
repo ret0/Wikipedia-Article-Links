@@ -7,12 +7,12 @@ import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
 @Root(strict = false)
-public class Page {
+public final class Page {
 
     @Attribute(required = false)
     private int pageid;
 
-	public int getPageid() {
+    public int getPageid() {
         return pageid;
     }
 
@@ -21,14 +21,14 @@ public class Page {
     }
 
     @ElementList(required = false)
-	private List<Rev> revisions;
+    private List<Rev> revisions;
 
-	public void setRevisions(final List<Rev> revisions) {
-		this.revisions = revisions;
-	}
+    public void setRevisions(final List<Rev> revisions) {
+        this.revisions = revisions;
+    }
 
-	public List<Rev> getRevisions() {
-		return revisions;
-	}
+    public List<Rev> getRevisions() {
+        return revisions;
+    }
 
 }

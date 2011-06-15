@@ -24,17 +24,18 @@ import com.google.common.collect.Lists;
 public class PageHistoryFetcher {
 
     private static final int MAX_MONTHS = 10;
+    private static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
 
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
     private static final int NUM_THREADS = 8;
 
-    private final static Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
 
     private final List<DateTime> allRelevantTimeStamps;
     private final DBUtil dataBaseUtil;
 
-    ThreadSafeClientConnManager cm;
+    //ThreadSafeClientConnManager cm;
     private final DefaultHttpClient httpClient;
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
@@ -42,54 +43,78 @@ public class PageHistoryFetcher {
     public PageHistoryFetcher(final DBUtil dataBaseUtil) {
         httpClient = new DefaultHttpClient(new ThreadSafeClientConnManager());
         this.dataBaseUtil = dataBaseUtil;
-        DateMidnight startDate = new DateMidnight(2011, 6, 1);
-        allRelevantTimeStamps = getAllDatesForHistory(startDate);
+        allRelevantTimeStamps = getAllDatesForHistory();
     }
 
-    private List<DateTime> getAllDatesForHistory(final DateMidnight latestDate) {
+    private List<DateTime> getAllDatesForHistory() {
         List<DateTime> allDatesToFetch = Lists.newArrayList();
+        LOG.info("Fetching the following Dates: ");
         for (int months = 0; months < MAX_MONTHS; months++) {
-            allDatesToFetch.add(latestDate.toDateTime().minusMonths(months));
+            final DateTime fetchDate = MOST_RECENT_DATE.toDateTime().minusMonths(months);
+            LOG.info(fetchDate.toString());
+            allDatesToFetch.add(fetchDate);
         }
-
-//        DateTime earliestDate = latestDate.minusYears(MAX_YEARS).toDateTime();
-//        while (earliestDate.isBefore(latestDate)) {
-//            allDatesToFetch.add(earliestDate);
-//            earliestDate = earliestDate.plusMonths(DELTA_MONTHS);
-//        }
-        System.out.println("Fetching: " + StringUtils.join(allDatesToFetch, "\n"));
         return allDatesToFetch;
     }
 
-    public void fetchAllRecords(final int pageId, final String pageTitle, final String lang) {
-        //get oldest revision of article, if it didnt exist yet, do not execute http request!
+    public void fetchAllRecords(final int pageId,
+                                final String pageTitle,
+                                final String lang) {
+        // get oldest revision of article, if it didnt exist yet, do not execute
+        // http request!
         String storedCreationDate = dataBaseUtil.getFirstRevisionDate(pageId, lang);
         DateTime firstRevisionDate;
-        if(StringUtils.isEmpty(storedCreationDate)) {
+        if (StringUtils.isEmpty(storedCreationDate)) {
             final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
             try {
-                firstRevisionDate = new FirstRevisionFetcher(pageTitle, lang, wikiAPIClient).getFirstRevisionDate();
+                firstRevisionDate = new FirstRevisionFetcher(pageTitle, lang, wikiAPIClient)
+                        .getFirstRevisionDate();
             } catch (Exception e) {
                 LOG.error("Error while fetching first revision date for: " + pageTitle);
                 return;
             }
         } else {
-            firstRevisionDate = DBUtil.MYSQL_DATETIME_FORMATTER.parseDateTime(StringUtils.removeEnd(storedCreationDate, ".0") );
+            firstRevisionDate = DBUtil.MYSQL_DATETIME_FORMATTER.parseDateTime(StringUtils.removeEnd(
+                    storedCreationDate, ".0"));
         }
 
+        final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
         for (DateTime dateToFetch : allRelevantTimeStamps) {
-            if(dateToFetch.isAfter(firstRevisionDate.plusWeeks(1))) { //ignore first week of article, not stable yet
-                final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
-                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang, dateToFetch, dataBaseUtil, wikiAPIClient);
-                if(plif.localDataUnavailable()) {
-                    try {
-                        Thread.sleep(THREAD_SLEEP_MSEC); // with a poolsize of 8, this should lead to ~7 request pro second
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    PageLinkInfo linkInformation = plif.getLinkInformation();
-                    dataBaseUtil.storePageLinkInfo(linkInformation, firstRevisionDate);
+            downloadLinkInfoIfNecessary(pageId, pageTitle, lang, firstRevisionDate, wikiAPIClient,
+                    dateToFetch);
+        }
+    }
+
+    private void downloadLinkInfoIfNecessary(final int pageId,
+                                             final String pageTitle,
+                                             final String lang,
+                                             final DateTime firstRevisionDate,
+                                             final WikiAPIClient wikiAPIClient,
+                                             final DateTime dateToFetch) {
+        if (dateToFetch.isAfter(firstRevisionDate.plusWeeks(1))) { // ignore
+                                                                   // first week
+                                                                   // of
+                                                                   // article,
+                                                                   // not stable
+                                                                   // yet
+            if (dataBaseUtil.localDataForRecordUnavailable(pageId, dateToFetch)) {
+                try {
+                    Thread.sleep(THREAD_SLEEP_MSEC); // with a poolsize of 8,
+                                                     // this should lead to ~7
+                                                     // request pro second
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang,
+                        dateToFetch, dataBaseUtil, wikiAPIClient);
+                PageLinkInfo linkInformation;
+                try {
+                    linkInformation = plif.getLinkInformation();
+                    dataBaseUtil.storePageLinkInfo(linkInformation, firstRevisionDate);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
         }
     }
@@ -102,30 +127,38 @@ public class PageHistoryFetcher {
             LOG.error("Error while shutting down Threadpool", e);
         }
         while (!threadPool.isTerminated()) {
-            // wait for all tasks or timeout
+            LOG.debug("Waiting for Thread-Pool termination");
         }
     }
 
+    /**
+     *
+     */
     public static void main(final String[] args) {
         final String lang = "en";
         new PageHistoryFetcher(new DBUtil()).fetchCompleteCategories(lang);
     }
 
     private void fetchCompleteCategories(final String lang) {
-        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(CategoryLists.ENGLISH_MUSIC, lang, dataBaseUtil).getAllPagesInAllCategories();
+        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(
+                CategoryLists.ENGLISH_MUSIC, lang, dataBaseUtil).getAllPagesInAllCategories();
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
         try {
-            for (final Entry<Integer, String> pageEntry: allPagesInAllCategories.entrySet()) {
+            for (final Entry<Integer, String> pageEntry : allPagesInAllCategories.entrySet()) {
                 threadPool.execute(new ExecutorTask(this, lang, pageEntry, counter++));
             }
-        } finally  {
+        } finally {
             shutdownThreadPool();
             httpClient.getConnectionManager().shutdown();
         }
     }
 
+    /**
+     * Runner for the download task of a pages records
+     */
     private static final class ExecutorTask implements Runnable {
+        private static final int MODULO_LOG = 100;
         private final PageHistoryFetcher pageHistoryFetcher;
         private final String lang;
         private final Entry<Integer, String> pageEntry;
@@ -140,8 +173,9 @@ public class PageHistoryFetcher {
         }
 
         public void run() {
-            if(taskCounter % 100 == 0) {
-                LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: " + taskCounter + ")");
+            if (taskCounter % MODULO_LOG == 0) {
+                LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: "
+                        + taskCounter + ")");
             }
             pageHistoryFetcher.fetchAllRecords(pageEntry.getKey(), pageEntry.getValue(), lang);
         }
