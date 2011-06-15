@@ -24,7 +24,7 @@ import com.google.common.collect.Lists;
 public class PageHistoryFetcher {
 
     private static final int DELTA_MONTHS = 1;
-    private static final int MAX_YEARS = 2;
+    private static final int MAX_YEARS = 1;
 
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
