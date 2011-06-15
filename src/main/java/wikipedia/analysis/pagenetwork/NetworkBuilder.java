@@ -1,5 +1,7 @@
 package wikipedia.analysis.pagenetwork;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +54,19 @@ public final class NetworkBuilder {
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;
+        final int numberOfLinks = allLinksInNetwork.size();
+        List<String> nodeDebug = Lists.newArrayList("Graph Size----- " + numberOfLinks);
         for (String targetPage : indegreeMatrix.keySet()) {
-            if (nodeQualifiedForGraph(indegreeMatrix, targetPage)
+            if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug)
                     && !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
+        }
+
+        try {
+            FileUtils.writeLines(new File("out/degreeOutput.txt"), nodeDebug);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
@@ -78,10 +89,13 @@ public final class NetworkBuilder {
 
 
     private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
-                                          final String targetPage) {
+                                          final String targetPage, final List<String> nodeDebug) {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int inDegree = allIncommingLinks.size();
         final boolean nodeQualified = inDegree >= MIN_INDEGREE;
+        if(inDegree > 100) {
+            nodeDebug.add(targetPage + "=" + inDegree);
+        }
         return nodeQualified;
     }
 
