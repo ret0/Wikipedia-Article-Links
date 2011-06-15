@@ -7,7 +7,10 @@ import org.joda.time.DateTime;
 
 import util.Const;
 
-public class PageLinkInfo {
+/**
+ * Infos about the outgoing links of a page a the given point in time
+ */
+public final class PageLinkInfo {
 
     private final String pageTitle;
     private final int pageID;
@@ -15,7 +18,8 @@ public class PageLinkInfo {
     private final List<String> outgoingLinks;
     private final int revisionID;
 
-    public PageLinkInfo(final String pageName, final DateTime revisionDate, final List<String> outgoingLinks, final int pageID, final int revisionID) {
+    public PageLinkInfo(final String pageName, final DateTime revisionDate,
+            final List<String> outgoingLinks, final int pageID, final int revisionID) {
         this.pageTitle = pageName;
         this.revisionDate = revisionDate;
         this.outgoingLinks = outgoingLinks;
@@ -52,6 +56,5 @@ public class PageLinkInfo {
     public List<String> getLinks() {
         return outgoingLinks;
     }
-
 
 }

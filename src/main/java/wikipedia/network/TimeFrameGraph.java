@@ -3,7 +3,10 @@ package wikipedia.network;
 import java.util.List;
 import java.util.Map;
 
-public class TimeFrameGraph {
+/**
+ * Encapsulates the state of the graph at a given frame
+ */
+public final class TimeFrameGraph {
 
     private final Map<String, Integer> nameIndexMap;
     private final List<GraphEdge> allEdges;

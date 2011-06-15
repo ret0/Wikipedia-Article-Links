@@ -36,7 +36,7 @@ public final class FirstRevisionFetcher {
     }
 
     private String getURL() {
-        final String encodedPageName = HTTPUtil.URLEncode(pageTitle);
+        final String encodedPageName = HTTPUtil.urlEncode(pageTitle);
         return "http://" + lang +
         ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles=" + encodedPageName +
         "&rvlimit=1&rvprop=timestamp&rvdir=newer";

@@ -20,7 +20,10 @@ import wikipedia.xml.XMLTransformer;
 
 import com.google.common.collect.Lists;
 
-public class PageLinkInfoFetcher {
+/**
+ * Dowloads the information of all outgoing links (to other wikipedia pages) of a wikipedia page
+ */
+public final class PageLinkInfoFetcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(PageLinkInfoFetcher.class.getName());
 
@@ -72,17 +75,17 @@ public class PageLinkInfoFetcher {
         return allInternalLinks;
     }
 
-    private String extractPageName(String link) {
-        link = StringUtils.removeStart(link, "[[");
-        link = StringUtils.removeEnd(link, "]]");
-        return StringUtils.substringBefore(link, "|");
+    private String extractPageName(final String link) {
+        String fixedLink = StringUtils.removeStart(link, "[[");
+        fixedLink = StringUtils.removeEnd(link, "]]");
+        return StringUtils.substringBefore(fixedLink, "|");
     }
 
     private String getURL() {
         final String timestamp = revisionDate.toString(ISODateTimeFormat.dateHourMinuteSecond())
                 + "Z";
-        final String encodedPageName = HTTPUtil.URLEncode(pageName);
-        final String revisionProperties = HTTPUtil.URLEncode("content|ids");
+        final String encodedPageName = HTTPUtil.urlEncode(pageName);
+        final String revisionProperties = HTTPUtil.urlEncode("content|ids");
         return "http://" + lang
                 + ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles="
                 + encodedPageName + "&rvlimit=1&rvprop=" + revisionProperties + "&rvstart="

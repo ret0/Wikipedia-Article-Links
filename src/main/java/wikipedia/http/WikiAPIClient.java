@@ -24,7 +24,10 @@ import org.slf4j.LoggerFactory;
 
 import util.Const;
 
-public class WikiAPIClient {
+/**
+ * Gzipped requests with a high timeout value for the wikipedia api
+ */
+public final class WikiAPIClient {
 
     private static final int HTTP_TIMEOUT = 15000; // milisec
     private static final Logger LOG = LoggerFactory.getLogger(WikiAPIClient.class.getName());
@@ -70,6 +73,7 @@ public class WikiAPIClient {
 
     private void addGzipRequestInterceptor(final DefaultHttpClient client) {
         client.addRequestInterceptor(new HttpRequestInterceptor() {
+            @Override
             public void process(final HttpRequest request,
                                 final HttpContext context) throws HttpException, IOException {
                 if (!request.containsHeader("Accept-Encoding")) {
@@ -81,6 +85,7 @@ public class WikiAPIClient {
 
     private void addGzipResponseInterceptor(final DefaultHttpClient client) {
         client.addResponseInterceptor(new HttpResponseInterceptor() {
+            @Override
             public void process(final HttpResponse response,
                                 final HttpContext context) throws HttpException, IOException {
                 HttpEntity entity = response.getEntity();

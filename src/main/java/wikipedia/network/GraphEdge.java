@@ -1,5 +1,8 @@
 package wikipedia.network;
 
+/**
+ * String based Graph Edge
+ */
 public final class GraphEdge {
 
     private final String from;

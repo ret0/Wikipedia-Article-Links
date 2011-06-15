@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
  */
 public final class PageHistoryFetcher {
 
-    public static final int MAX_MONTHS = 14;
+    public static final int MAX_MONTHS = 15;
     public static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
 
     private static final int THREAD_SLEEP_MSEC = 1200;
@@ -64,7 +64,7 @@ public final class PageHistoryFetcher {
                                 final String lang) {
         // get oldest revision of article, if it didnt exist yet, do not execute
         // http request!
-        String storedCreationDate = dataBaseUtil.getFirstRevisionDate(pageId, lang);
+        String storedCreationDate = dataBaseUtil.getFirstRevisionDate(pageId);
         DateTime firstRevisionDate;
         if (StringUtils.isEmpty(storedCreationDate)) {
             final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
@@ -174,6 +174,7 @@ public final class PageHistoryFetcher {
             this.taskCounter = taskCounter;
         }
 
+        @Override
         public void run() {
             if (taskCounter % MODULO_LOG == 0) {
                 LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: "

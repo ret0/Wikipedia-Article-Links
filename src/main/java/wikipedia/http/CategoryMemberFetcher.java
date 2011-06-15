@@ -16,7 +16,10 @@ import wikipedia.xml.XMLTransformer;
 
 import com.google.common.collect.Maps;
 
-public class CategoryMemberFetcher {
+/**
+ * Download a list of all the pages that belong to a given list of categories
+ */
+public final class CategoryMemberFetcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(CategoryMemberFetcher.class.getName());
 
@@ -91,8 +94,8 @@ public class CategoryMemberFetcher {
 
     private String getURL(final String categoryName,
                           final String queryContinue) {
-        final String encodedCategoryName = HTTPUtil.URLEncode(categoryName);
-        final String encodedqueryContinue = HTTPUtil.URLEncode(queryContinue);
+        final String encodedCategoryName = HTTPUtil.urlEncode(categoryName);
+        final String encodedqueryContinue = HTTPUtil.urlEncode(queryContinue);
         return "http://"
                 + lang
                 + ".wikipedia.org/w/api.php?format=xml&action=query&cmlimit=500&list=categorymembers&cmtitle="

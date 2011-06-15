@@ -3,6 +3,10 @@ package wikipedia.xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
+/**
+ * XML Element returned from Wikipedia API
+ * see http://en.wikipedia.org/w/api.php
+ */
 @Root(strict = false)
 class User {
 

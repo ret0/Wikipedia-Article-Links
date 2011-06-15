@@ -4,10 +4,14 @@ import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class XMLTransformer {
+/**
+ * Returns API objects based on XML returned from the Wikipedia API
+ */
+public final class XMLTransformer {
+
+    private XMLTransformer() { }
 
     private static final Logger LOG = LoggerFactory.getLogger(XMLTransformer.class.getName());
-
     private static final Persister PERSISTER = new Persister();
 
     /**

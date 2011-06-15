@@ -6,6 +6,10 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+/**
+ * XML Element returned from Wikipedia API
+ * see http://en.wikipedia.org/w/api.php
+ */
 @Root(strict = false)
 public final class Page {
 

@@ -23,7 +23,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public class NetworkBuilder {
+/**
+ * Builds a Network structure based on all pages in the given categories
+ */
+public final class NetworkBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
 
@@ -98,14 +101,14 @@ public class NetworkBuilder {
         return indegreeMatrix;
     }
 
-    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetwork) {
-        Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetwork.values());
+    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetworkList) {
+        Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetworkList.values());
         final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists
                 .<GraphEdge> newArrayList());
         LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
         int taskCounter = 1;
         try {
-            for (Entry<Integer, String> entry : allPagesInNetwork.entrySet()) {
+            for (Entry<Integer, String> entry : allPagesInNetworkList.entrySet()) {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
                 threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName,
@@ -129,6 +132,10 @@ public class NetworkBuilder {
         }
     }
 
+    /**
+     * Fetches Information from DB and calculates all incomming links to a given
+     * page in the network
+     */
     private final class SQLExecutor implements Runnable {
         private static final int LOG_MODULO = 4000;
         private final int pageId;
@@ -146,6 +153,7 @@ public class NetworkBuilder {
             this.counter = counter;
         }
 
+        @Override
         public void run() {
             if (counter % LOG_MODULO == 0) {
                 LOG.info("Task: " + counter);

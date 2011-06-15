@@ -3,6 +3,10 @@ package wikipedia.xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Text;
 
+/**
+ * XML Element returned from Wikipedia API
+ * see http://en.wikipedia.org/w/api.php
+ */
 public final class Rev {
 
     @Text(required = false)

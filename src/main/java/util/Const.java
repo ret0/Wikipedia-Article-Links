@@ -1,6 +1,11 @@
 package util;
 
-public class Const {
+/**
+ * General Constants for dealing with the Wikipedia API
+ */
+public final class Const {
+
+    private Const() { }
 
     public static final String ENCODING = "UTF-8";
     public static final String USER_AGENT = "Reto Kleeb, MIT Center for Collective Intelligence, retokl@gmail.com";

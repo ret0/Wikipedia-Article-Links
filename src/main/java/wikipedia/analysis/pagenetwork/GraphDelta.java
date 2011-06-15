@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 /**
  * Bean to create JSON output for the differences between two animation frames.
  */
-public class GraphDelta {
+public final class GraphDelta {
 
     private final List<String> add;
     private final List<String> del;

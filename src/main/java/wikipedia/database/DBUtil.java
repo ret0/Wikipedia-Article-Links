@@ -34,7 +34,7 @@ import com.google.common.collect.Maps;
 /**
  * Util for all DB read/write ops
  */
-public class DBUtil {
+public final class DBUtil {
 
     private static final int MAX_TITLE_LENGTH = 256;
     public static final String MYSQL_DATETIME = "YYYY-MM-dd HH:mm:ss";
@@ -58,7 +58,8 @@ public class DBUtil {
                                   final DateTime firstRevisionDate) {
         // if page entry already there, only store revision
         // FIXME performance
-        final int numberOfPageEntries = jdbcTemplate.queryForInt("SELECT count(0) FROM pages WHERE page_id = ?",
+        final int numberOfPageEntries = jdbcTemplate.queryForInt(
+                "SELECT count(0) FROM pages WHERE page_id = ?",
                 new Object[] {pliToBeStored.getPageID() });
         final String timeStamp = pliToBeStored.getTimeStamp().toString(MYSQL_DATETIME_FORMATTER);
         final String firstRevisionDateTime = firstRevisionDate.toString(MYSQL_DATETIME_FORMATTER);
@@ -68,23 +69,23 @@ public class DBUtil {
             @Override
             protected void doInTransactionWithoutResult(final TransactionStatus status) {
                 if (numberOfPageEntries == 0) {
-                    jdbcTemplate.update("INSERT INTO pages (page_id, page_title, creation_date) VALUES (?, ?, ?)", new Object[] {pliToBeStored.getPageID(),
+                    jdbcTemplate.update("INSERT INTO pages (page_id, page_title, creation_date) "
+                            + "VALUES (?, ?, ?)", new Object[] {pliToBeStored.getPageID(),
                             pliToBeStored.getPageTitle(), firstRevisionDateTime });
                 }
 
                 for (String outgoingLink : pliToBeStored.getLinks()) {
                     try {
-                        jdbcTemplate
-                                .queryForInt(
-                                        "SELECT src_page_id FROM outgoing_links WHERE target_page_title = ? AND revision_date = ? AND src_page_id = ?",
-                                        new Object[] {outgoingLink, timeStamp,
-                                                pliToBeStored.getPageID() });
+                        jdbcTemplate.queryForInt("SELECT src_page_id FROM outgoing_links "
+                                + "WHERE target_page_title = ? AND revision_date = ? "
+                                + "AND src_page_id = ?", new Object[] {outgoingLink, timeStamp,
+                                pliToBeStored.getPageID() });
                     } catch (EmptyResultDataAccessException e) {
                         if (outgoingLink.length() < MAX_TITLE_LENGTH) {
-                            jdbcTemplate
-                                    .update("INSERT INTO outgoing_links (src_page_id, target_page_title, revision_date) VALUES (?, ?, ?)",
-                                            new Object[] {pliToBeStored.getPageID(), outgoingLink,
-                                                    timeStamp });
+                            jdbcTemplate.update("INSERT INTO outgoing_links "
+                                    + "(src_page_id, target_page_title, revision_date) "
+                                    + "VALUES (?, ?, ?)", new Object[] {pliToBeStored.getPageID(),
+                                    outgoingLink, timeStamp });
                         }
                     }
                 }
@@ -93,8 +94,8 @@ public class DBUtil {
         });
     }
 
-    public String getFirstRevisionDate(final int pageId,
-                                       final String lang) {
+    public String getFirstRevisionDate(final int pageId
+                                       /*final String lang*/) {
         try {
             return jdbcTemplate.queryForObject("SELECT creation_date FROM pages WHERE page_id = ?",
                     String.class, new Object[] {pageId });
@@ -123,6 +124,7 @@ public class DBUtil {
                             pageId, dateTime);
             return Collections2.transform(allLinksString,
                     new Function<Map<String, Object>, String>() {
+                        @Override
                         public String apply(final Map<String, Object> input) {
                             return input.get("target_page_title").toString();
                         }

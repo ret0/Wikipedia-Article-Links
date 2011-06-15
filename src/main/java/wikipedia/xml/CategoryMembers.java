@@ -2,7 +2,11 @@ package wikipedia.xml;
 
 import org.simpleframework.xml.Attribute;
 
-public class CategoryMembers {
+/**
+ * XML Element returned from Wikipedia API
+ * see http://en.wikipedia.org/w/api.php
+ */
+public final class CategoryMembers {
 
     @Attribute
     private String cmcontinue;
