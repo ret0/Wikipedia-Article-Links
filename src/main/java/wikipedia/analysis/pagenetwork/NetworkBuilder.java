@@ -33,7 +33,7 @@ public final class NetworkBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
 
-    private final String revisionDateTime;
+    //private final String revisionDateTime;
     private final DBUtil database = new DBUtil();
     private static final int MIN_INDEGREE = 120;
 
@@ -42,15 +42,15 @@ public final class NetworkBuilder {
 
     private final Map<Integer, String> allPagesInNetwork;
 
-    public NetworkBuilder(final List<String> categories, final String lang,
-            final DateMidnight dateMidnight) {
-        this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+    public NetworkBuilder(final List<String> categories, final String lang) {
+        //this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
                 .getAllPagesInAllCategories();
     }
 
-    public TimeFrameGraph getGraphAtDate() {
-        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork);
+    public TimeFrameGraph getGraphAtDate(final DateMidnight dateMidnight) {
+        String revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
         int nodeIndex = 0;
@@ -64,7 +64,7 @@ public final class NetworkBuilder {
         }
 
         try {
-            FileUtils.writeLines(new File("out/degreeOutput.txt"), nodeDebug);
+            FileUtils.writeLines(new File("out/degreeOutput" + revisionDateTime + ".txt"), nodeDebug);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -115,7 +115,7 @@ public final class NetworkBuilder {
         return indegreeMatrix;
     }
 
-    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetworkList) {
+    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetworkList, final String revisionDateTime) {
         Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetworkList.values());
         final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists
                 .<GraphEdge> newArrayList());
@@ -126,7 +126,7 @@ public final class NetworkBuilder {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
                 threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName,
-                        allLinksInNetwork, taskCounter++));
+                        allLinksInNetwork, taskCounter++, revisionDateTime));
             }
         } finally {
             shutdownThreadPool();
@@ -157,14 +157,17 @@ public final class NetworkBuilder {
         private final String pageName;
         private final List<GraphEdge> allLinksInNetwork;
         private final int counter;
+        private final String revisionDateTime;
 
         private SQLExecutor(final int pageId, final Set<String> allPageNamesInNetwork,
-                final String pageName, final List<GraphEdge> allLinksInNetwork2, final int counter) {
+                final String pageName, final List<GraphEdge> allLinksInNetwork2, final int counter,
+                final String revisionDateTime) {
             this.pageId = pageId;
             this.allPageNamesInNetwork = allPageNamesInNetwork;
             this.pageName = pageName;
             this.allLinksInNetwork = allLinksInNetwork2;
             this.counter = counter;
+            this.revisionDateTime = revisionDateTime;
         }
 
         @Override
