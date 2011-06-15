@@ -47,6 +47,9 @@ public final class PageHistoryFetcher {
         allRelevantTimeStamps = getAllDatesForHistory(MAX_MONTHS, MOST_RECENT_DATE.toDateTime());
     }
 
+    /**
+     * @return List of Dates most recent to oldest
+     */
     public static List<DateTime> getAllDatesForHistory(final int numberOfRevisions,
                                                        final DateTime mostRecent) {
         List<DateTime> allDatesToFetch = Lists.newArrayList();
