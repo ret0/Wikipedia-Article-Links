@@ -8,9 +8,12 @@ import util.HTTPUtil;
 import wikipedia.xml.Api;
 import wikipedia.xml.XMLTransformer;
 
-public class FirstRevisionFetcher {
+/**
+ * Downloads the date of the first (oldest) revision of a page
+ */
+public final class FirstRevisionFetcher {
 
-    private final static Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
 
     private final String pageTitle;
     private final String lang;

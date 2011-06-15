@@ -3,7 +3,7 @@ package wikipedia.xml;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Text;
 
-public class Rev {
+public final class Rev {
 
     @Text(required = false)
     private String value;
@@ -50,21 +50,21 @@ public class Rev {
     }
 
     @Attribute(required = false)
-	private String user;
+    private String user;
 
-	@Attribute(required = false)
-	private String minor;
+    @Attribute(required = false)
+    private String minor;
 
-	@Attribute(required = false)
-	private String timestamp;
+    @Attribute(required = false)
+    private String timestamp;
 
-	@Attribute(required = false)
-	private int size;
+    @Attribute(required = false)
+    private int size;
 
-	@Attribute(required = false)
+    @Attribute(required = false)
     private String space;
 
-	public String getSpace() {
+    public String getSpace() {
         return space;
     }
 
@@ -73,12 +73,12 @@ public class Rev {
     }
 
     @Attribute(required = false)
-	private String anon;
+    private String anon;
 
-	@Attribute(required = false)
-	private String userhidden;
+    @Attribute(required = false)
+    private String userhidden;
 
-	public String getUserhidden() {
+    public String getUserhidden() {
         return userhidden;
     }
 
@@ -111,18 +111,18 @@ public class Rev {
     }
 
     public String getMinor() {
-		return minor;
-	}
+        return minor;
+    }
 
-	public void setMinor(final String minor) {
-		this.minor = minor;
-	}
+    public void setMinor(final String minor) {
+        this.minor = minor;
+    }
 
-	public void setUser(final String user) {
-		this.user = user;
-	}
+    public void setUser(final String user) {
+        this.user = user;
+    }
 
-	public String getUser() {
-		return user;
-	}
+    public String getUser() {
+        return user;
+    }
 }

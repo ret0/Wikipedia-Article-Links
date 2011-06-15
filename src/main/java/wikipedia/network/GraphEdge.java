@@ -1,6 +1,6 @@
 package wikipedia.network;
 
-public class GraphEdge {
+public final class GraphEdge {
 
     private final String from;
     private final String to;
@@ -53,9 +53,6 @@ public class GraphEdge {
             return false;
         return true;
     }
-
-
-
 
 
 }

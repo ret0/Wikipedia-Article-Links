@@ -10,7 +10,9 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
 
+import wikipedia.http.PageHistoryFetcher;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
 
@@ -20,24 +22,18 @@ import com.google.common.collect.Sets;
 
 public class DeltaPrinter {
 
+    private static final int NUM_REVISIONS = 5;
+
     public static void main(final String[] args) throws IOException {
-        List<DateMidnight> allTimeFrames = Lists.newArrayList(
-                                                          new DateMidnight(2010, 7, 1),
-                                                          new DateMidnight(2010, 8, 1),
-                                                          new DateMidnight(2010, 9, 1),
-                                                          new DateMidnight(2010, 10, 1),
-                                                          new DateMidnight(2010, 11, 1),
-                                                          new DateMidnight(2010, 12, 1),
-                                                          new DateMidnight(2011, 1, 1),
-                                                          new DateMidnight(2011, 2, 1),
-                                                          new DateMidnight(2011, 3, 1),
-                                                          new DateMidnight(2011, 4, 1));
+        List<DateTime> allTimeFrames = PageHistoryFetcher.
+        getAllDatesForHistory(NUM_REVISIONS, PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
 
         final List<String> categories = CategoryLists.ENGLISH_MUSIC;
         Map<DateMidnight, TimeFrameGraph> dateGraphMap = Maps.newHashMap();
 
-        for (DateMidnight dateTime : allTimeFrames) {
-            dateGraphMap.put(dateTime, new NetworkBuilder(categories, "en", dateTime).getGraphAtDate());
+        for (DateTime dateTime : allTimeFrames) {
+            DateMidnight dateMidnight = dateTime.toDateMidnight();
+            dateGraphMap.put(dateMidnight, new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate());
         }
 
         String completeJSONForPage = generateTimeFrameInformation(Lists.newArrayList(dateGraphMap.values()));

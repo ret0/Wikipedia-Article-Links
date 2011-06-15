@@ -130,6 +130,7 @@ public class NetworkBuilder {
     }
 
     private final class SQLExecutor implements Runnable {
+        private static final int LOG_MODULO = 4000;
         private final int pageId;
         private final Set<String> allPageNamesInNetwork;
         private final String pageName;
@@ -146,7 +147,7 @@ public class NetworkBuilder {
         }
 
         public void run() {
-            if (counter % 4000 == 0) {
+            if (counter % LOG_MODULO == 0) {
                 LOG.info("Task: " + counter);
             }
             Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId,

@@ -4,7 +4,7 @@ import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
 @Root(strict = false)
-public class QueryContinue {
+public final class QueryContinue {
 
     @Element(required = false)
     private Revisions revisions;

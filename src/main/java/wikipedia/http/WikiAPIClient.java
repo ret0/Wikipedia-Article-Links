@@ -68,8 +68,8 @@ public class WikiAPIClient {
         return "";
     }
 
-    private void addGzipRequestInterceptor(final DefaultHttpClient httpclient) {
-        httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
+    private void addGzipRequestInterceptor(final DefaultHttpClient client) {
+        client.addRequestInterceptor(new HttpRequestInterceptor() {
             public void process(final HttpRequest request,
                                 final HttpContext context) throws HttpException, IOException {
                 if (!request.containsHeader("Accept-Encoding")) {
@@ -79,8 +79,8 @@ public class WikiAPIClient {
         });
     }
 
-    private void addGzipResponseInterceptor(final DefaultHttpClient httpclient) {
-        httpclient.addResponseInterceptor(new HttpResponseInterceptor() {
+    private void addGzipResponseInterceptor(final DefaultHttpClient client) {
+        client.addResponseInterceptor(new HttpResponseInterceptor() {
             public void process(final HttpResponse response,
                                 final HttpContext context) throws HttpException, IOException {
                 HttpEntity entity = response.getEntity();
@@ -97,8 +97,8 @@ public class WikiAPIClient {
         });
     }
 
-    private void setHTTPClientTimeouts(final DefaultHttpClient httpclient) {
-        HttpParams httpParams = httpclient.getParams();
+    private void setHTTPClientTimeouts(final DefaultHttpClient client) {
+        HttpParams httpParams = client.getParams();
         int connectionTimeoutMillis = HTTP_TIMEOUT;
         int socketTimeoutMillis = HTTP_TIMEOUT;
         HttpConnectionParams.setConnectionTimeout(httpParams, connectionTimeoutMillis);

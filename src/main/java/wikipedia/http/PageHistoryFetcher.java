@@ -21,10 +21,13 @@ import wikipedia.network.PageLinkInfo;
 
 import com.google.common.collect.Lists;
 
-public class PageHistoryFetcher {
+/**
+ * Downloads all link revisions of a given page
+ */
+public final class PageHistoryFetcher {
 
-    private static final int MAX_MONTHS = 10;
-    private static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
+    public static final int MAX_MONTHS = 11;
+    public static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
 
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
@@ -33,24 +36,23 @@ public class PageHistoryFetcher {
     private static final Logger LOG = LoggerFactory.getLogger(PageHistoryFetcher.class.getName());
 
     private final List<DateTime> allRelevantTimeStamps;
-    private final DBUtil dataBaseUtil;
+    private final DBUtil dataBaseUtil = new DBUtil();
 
-    //ThreadSafeClientConnManager cm;
-    private final DefaultHttpClient httpClient;
+    private final DefaultHttpClient httpClient = new DefaultHttpClient(
+            new ThreadSafeClientConnManager());
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
-    public PageHistoryFetcher(final DBUtil dataBaseUtil) {
-        httpClient = new DefaultHttpClient(new ThreadSafeClientConnManager());
-        this.dataBaseUtil = dataBaseUtil;
-        allRelevantTimeStamps = getAllDatesForHistory();
+    public PageHistoryFetcher() {
+        allRelevantTimeStamps = getAllDatesForHistory(MAX_MONTHS, MOST_RECENT_DATE.toDateTime());
     }
 
-    private List<DateTime> getAllDatesForHistory() {
+    public static List<DateTime> getAllDatesForHistory(final int numberOfRevisions,
+                                                       final DateTime mostRecent) {
         List<DateTime> allDatesToFetch = Lists.newArrayList();
         LOG.info("Fetching the following Dates: ");
-        for (int months = 0; months < MAX_MONTHS; months++) {
-            final DateTime fetchDate = MOST_RECENT_DATE.toDateTime().minusMonths(months);
+        for (int months = 0; months < numberOfRevisions; months++) {
+            final DateTime fetchDate = mostRecent.toDateTime().minusMonths(months);
             LOG.info(fetchDate.toString());
             allDatesToFetch.add(fetchDate);
         }
@@ -105,8 +107,8 @@ public class PageHistoryFetcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, pageId, lang,
-                        dateToFetch, dataBaseUtil, wikiAPIClient);
+                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, lang, dateToFetch,
+                        wikiAPIClient);
                 PageLinkInfo linkInformation;
                 try {
                     linkInformation = plif.getLinkInformation();
@@ -136,7 +138,7 @@ public class PageHistoryFetcher {
      */
     public static void main(final String[] args) {
         final String lang = "en";
-        new PageHistoryFetcher(new DBUtil()).fetchCompleteCategories(lang);
+        new PageHistoryFetcher().fetchCompleteCategories(lang);
     }
 
     private void fetchCompleteCategories(final String lang) {

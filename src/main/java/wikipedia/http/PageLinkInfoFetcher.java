@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
-import wikipedia.database.DBUtil;
 import wikipedia.network.PageLinkInfo;
 import wikipedia.xml.Api;
 import wikipedia.xml.Page;
@@ -28,18 +27,14 @@ public class PageLinkInfoFetcher {
     private final String lang;
     private final String pageName;
     private final DateTime revisionDate;
-    private final int pageId;
-    private final DBUtil dbUtil;
 
     private final WikiAPIClient wikiAPIClient;
 
-    public PageLinkInfoFetcher(final String pageName, final int pageId, final String lang,
-            final DateTime revisionDate, final DBUtil dbUtil, final WikiAPIClient wikiAPIClient) {
+    public PageLinkInfoFetcher(final String pageName, final String lang,
+            final DateTime revisionDate, final WikiAPIClient wikiAPIClient) {
         this.pageName = pageName;
-        this.pageId = pageId;
         this.lang = lang;
         this.revisionDate = revisionDate;
-        this.dbUtil = dbUtil;
         this.wikiAPIClient = wikiAPIClient;
     }
 
