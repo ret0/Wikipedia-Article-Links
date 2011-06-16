@@ -14,6 +14,7 @@ import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.MapSorter;
 import wikipedia.database.DBUtil;
 import wikipedia.http.CategoryMemberFetcher;
 import wikipedia.network.GraphEdge;
@@ -50,15 +51,30 @@ public final class NetworkBuilder {
             List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
-        int nodeIndex = 0;
+
         final int numberOfLinks = allLinksInNetwork.size();
-        //List<String> nodeDebug = Lists.newArrayList("Graph Size----- " + numberOfLinks);
+        Map<String, Float> pageIndegMap = Maps.newHashMap();
         for (String targetPage : indegreeMatrix.keySet()) {
-            if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug, numberOfLinks)
-                    /*&& !nameIndexMap.containsKey(targetPage)*/) {
+            /*if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug, numberOfLinks)
+                    /*&& !nameIndexMap.containsKey(targetPage)) {
                 nameIndexMap.put(targetPage, nodeIndex++);
-            }
+            }*/
+            List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
+            int totalNumberOfLinks = allIncommingLinks.size();
+            final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
+            pageIndegMap.put(targetPage, magicNumber);
         }
+
+        int nodeIndex = 0;
+        Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
+        for (Entry<String, Float> pageIndegEntry : allPagesOrderedByIndeg.entrySet()) {
+            if (nodeIndex >= 50) {
+                break;
+            }
+            nameIndexMap.put(pageIndegEntry.getKey(), nodeIndex++);
+        }
+
+
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         // TODO loop not optimal
@@ -82,14 +98,14 @@ public final class NetworkBuilder {
     private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
                                           final String targetPage, final List<String> nodeDebug, final int numberOfLinks) {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
-        int inDegree = allIncommingLinks.size();
+        int totalNumberOfLinks = allIncommingLinks.size();
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        final float magicNumber = ((float) inDegree / (float) numberOfLinks) * 1000;
+        final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
         final boolean nodeQualified = magicNumber >= 1.35f;
         Set<String> selectedPeople = Sets.newHashSet("Michael Jackson", "Justin Bieber", "Lady Gaga", "Bob Dylan", "Elvis Presley");
 //        if(selectedPeople.contains(targetPage)) {
         if(magicNumber > 1.25) {
-            nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + inDegree + "=" + magicNumber);
+            nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + totalNumberOfLinks + "=" + magicNumber);
         }
         return nodeQualified;
     }
