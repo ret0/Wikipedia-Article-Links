@@ -24,7 +24,7 @@ import com.google.common.collect.Sets;
  */
 public final class DeltaPrinter {
 
-    private static final int NUM_REVISIONS = 12;
+    private static final int NUM_REVISIONS = 24;
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
 
