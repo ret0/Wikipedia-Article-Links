@@ -55,7 +55,7 @@ public final class NetworkBuilder {
         //List<String> nodeDebug = Lists.newArrayList("Graph Size----- " + numberOfLinks);
         for (String targetPage : indegreeMatrix.keySet()) {
             if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug, numberOfLinks)
-                    && !nameIndexMap.containsKey(targetPage)) {
+                    /*&& !nameIndexMap.containsKey(targetPage)*/) {
                 nameIndexMap.put(targetPage, nodeIndex++);
             }
         }

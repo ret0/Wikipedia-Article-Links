@@ -45,9 +45,9 @@ public final class DeltaPrinter {
     private String buildNetworksAndGenerateInfo() {
         List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
         List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
-        List<String> nodeDebug = Lists.newArrayList();
         for (DateTime dateTime : allTimeFramesOldToNew) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
+            List<String> nodeDebug = Lists.newArrayList();
             dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate(nodeDebug));
             try {
                 FileUtils.writeLines(new File("out/degreeOutput" + dateMidnight.toString() + ".txt"), nodeDebug);
