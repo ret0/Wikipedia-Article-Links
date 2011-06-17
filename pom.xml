@@ -28,9 +28,6 @@
                 </executions>
                 <configuration>
                     <executable>maven</executable>
-                    <arguments>
-                        <argument>-Xmx2G</argument>
-                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

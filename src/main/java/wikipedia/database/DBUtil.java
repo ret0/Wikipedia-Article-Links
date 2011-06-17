@@ -179,8 +179,9 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT * FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT 500000", new Object[] {});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT 50000", new Object[] {});
         int counter = 0;
+        List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
             final int pageId = (Integer) entry.get("src_page_id");
@@ -190,11 +191,12 @@ public final class DBUtil {
             fixedPageName = StringUtils.strip(fixedPageName);
             //LOG.info("OLD: " + oldPageName);
             if(counter++ % 5000 == 0) {
-                LOG.info("NEW: " + fixedPageName);
+                LOG.info("[" + counter + "]NEW: " + fixedPageName);
             }
-            jdbcTemplate.update("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;",
-                    new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
+            batchArguments.add(new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
         }
+        LOG.info("Starting BATCH!");
+        jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
     }
 
     private void storePageEntry(final String lang,
