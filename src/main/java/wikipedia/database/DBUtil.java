@@ -5,6 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
@@ -179,26 +182,50 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
+        ExecutorService threadPool = Executors.newFixedThreadPool(8);
         final int middle = 50000;
         final List<Object[]> batchArguments = queryPart(0, middle);
         final List<Object[]> batchArguments2 = queryPart(middle, middle * 2);
-        LOG.info("Starting BATCH!1");
-        new Runnable() {
-            @Override
-            public void run() {
-                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
+        final List<Object[]> batchArguments3 = queryPart(middle * 2, middle * 3);
+        final List<Object[]> batchArguments4 = queryPart(middle * 3, middle * 4);
+        List<List<Object[]>> sections = Lists.newArrayList(batchArguments, batchArguments2, batchArguments3, batchArguments4);
 
-            }
-        }.run();
+        for (final List<Object[]> section : sections) {
+            threadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
+                }});
+        }
 
-        LOG.info("Starting BATCH!2");
-        new Runnable() {
-            @Override
-            public void run() {
-                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments2);
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            LOG.error("Error while shutting down Threadpool", e);
+        }
+        while (!threadPool.isTerminated()) {
+            LOG.debug("Waiting for Thread-Pool termination");
+        }
 
-            }
-        }.run();
+
+//        LOG.info("Starting BATCH!1");
+//        new Runnable() {
+//            @Override
+//            public void run() {
+//                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
+//
+//            }
+//        }.run();
+//
+//        LOG.info("Starting BATCH!2");
+//        new Runnable() {
+//            @Override
+//            public void run() {
+//                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments2);
+//
+//            }
+//        }.run();
     }
 
     private List<Object[]> queryPart(final int start, final int end) {
@@ -215,9 +242,9 @@ public final class DBUtil {
             fixedPageName = StringUtils.remove(fixedPageName, "[[");
             fixedPageName = StringUtils.strip(fixedPageName);
             //LOG.info("OLD: " + oldPageName);
-            if(counter++ % 5000 == 0) {
-                LOG.info("[" + counter + "]NEW: " + fixedPageName);
-            }
+            //if(counter++ % 5000 == 0) {
+             //   LOG.info("[" + counter + "]NEW: " + fixedPageName);
+            //}
             batchArguments.add(new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
         }
         return batchArguments;
