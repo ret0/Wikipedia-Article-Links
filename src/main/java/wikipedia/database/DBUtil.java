@@ -179,8 +179,9 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        final List<Object[]> batchArguments = queryPart(0, 500000);
-        final List<Object[]> batchArguments2 = queryPart(50000, 100000);
+        final int middle = 50000;
+        final List<Object[]> batchArguments = queryPart(0, middle);
+        final List<Object[]> batchArguments2 = queryPart(middle, middle * 2);
         LOG.info("Starting BATCH!1");
         new Runnable() {
             @Override
