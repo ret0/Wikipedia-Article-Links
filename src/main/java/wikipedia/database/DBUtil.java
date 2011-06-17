@@ -179,7 +179,9 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
+        LOG.info("BEFORE QUERY");
         List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT 50000", new Object[] {});
+        LOG.info("AFTER QUERY");
         int counter = 0;
         List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
