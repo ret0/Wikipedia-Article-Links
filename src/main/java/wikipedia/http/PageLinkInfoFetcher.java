@@ -69,7 +69,7 @@ public final class PageLinkInfoFetcher {
                 relevantPageInfo.getPageid());
     }
 
-    private List<String> getAllInternalLinks(final String pageText) {
+    public static List<String> getAllInternalLinks(final String pageText) {
         List<String> allInternalLinks = Lists.newArrayList();
         final String internalLinkRegexp = "\\[{2}.+?\\]{2}";
         Matcher matcher = Pattern.compile(internalLinkRegexp, Pattern.DOTALL).matcher(pageText);
@@ -80,10 +80,11 @@ public final class PageLinkInfoFetcher {
         return allInternalLinks;
     }
 
-    private String extractPageName(final String link) {
+    private static String extractPageName(final String link) {
         String fixedLink = StringUtils.removeStart(link, "[[");
-        fixedLink = StringUtils.removeEnd(link, "]]");
-        return StringUtils.substringBefore(fixedLink, "|");
+        fixedLink = StringUtils.removeEnd(fixedLink, "]]");
+        fixedLink = StringUtils.substringBefore(fixedLink, "|");
+        return StringUtils.strip(fixedLink);
     }
 
     private String getURL() {
