@@ -179,11 +179,33 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
+        final List<Object[]> batchArguments = queryPart(0, 500000);
+        final List<Object[]> batchArguments2 = queryPart(50000, 100000);
+        LOG.info("Starting BATCH!1");
+        new Runnable() {
+            @Override
+            public void run() {
+                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
+
+            }
+        }.run();
+
+        LOG.info("Starting BATCH!2");
+        new Runnable() {
+            @Override
+            public void run() {
+                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments2);
+
+            }
+        }.run();
+    }
+
+    private List<Object[]> queryPart(final int start, final int end) {
         LOG.info("BEFORE QUERY");
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT 50000", new Object[] {});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start + ", " + end, new Object[] {});
         LOG.info("AFTER QUERY");
         int counter = 0;
-        List<Object[]> batchArguments = Lists.newArrayList();
+        final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
             final int pageId = (Integer) entry.get("src_page_id");
@@ -197,8 +219,7 @@ public final class DBUtil {
             }
             batchArguments.add(new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
         }
-        LOG.info("Starting BATCH!");
-        jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
+        return batchArguments;
     }
 
     private void storePageEntry(final String lang,
