@@ -16,15 +16,13 @@ public final class PageLinkInfo {
     private final int pageID;
     private final DateTime revisionDate;
     private final List<String> outgoingLinks;
-    private final int revisionID;
 
     public PageLinkInfo(final String pageName, final DateTime revisionDate,
-            final List<String> outgoingLinks, final int pageID, final int revisionID) {
+            final List<String> outgoingLinks, final int pageID) {
         this.pageTitle = pageName;
         this.revisionDate = revisionDate;
         this.outgoingLinks = outgoingLinks;
         this.pageID = pageID;
-        this.revisionID = revisionID;
     }
 
     @Override
@@ -39,10 +37,6 @@ public final class PageLinkInfo {
 
     public int getPageID() {
         return pageID;
-    }
-
-    public int getRevisionID() {
-        return revisionID;
     }
 
     public DateTime getTimeStamp() {

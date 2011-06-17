@@ -51,17 +51,22 @@ public final class PageLinkInfoFetcher {
             final Rev relevantRevision = relevantPageInfo.getRevisions().get(0);
             final String pageText = relevantRevision.getValue();
             if (StringUtils.isEmpty(pageText)) { // text blank at revision
-                return new PageLinkInfo(pageName, revisionDate, new LinkedList<String>(),
-                        relevantPageInfo.getPageid(), relevantRevision.getRevid());
+                return fetchingPageLinkInfoFailed(relevantPageInfo);
             } else {
                 final List<String> allInternalLinksOnPage = getAllInternalLinks(pageText);
                 return new PageLinkInfo(pageName, revisionDate, allInternalLinksOnPage,
-                        relevantPageInfo.getPageid(), relevantRevision.getRevid());
+                        relevantPageInfo.getPageid());
             }
         } else {
-            throw new RuntimeException(
-                    "Problem while getting revisions from Wikipedia API, URL was: " + url);
+            return fetchingPageLinkInfoFailed(relevantPageInfo);
         }
+    }
+
+    private PageLinkInfo fetchingPageLinkInfoFailed(final Page relevantPageInfo) {
+        LOG.error("No valid Links for Page: " + pageName + " at " + revisionDate +
+                " (Typical reason: page was renamed or deleted)");
+        return new PageLinkInfo(pageName, revisionDate, new LinkedList<String>(),
+                relevantPageInfo.getPageid());
     }
 
     private List<String> getAllInternalLinks(final String pageText) {

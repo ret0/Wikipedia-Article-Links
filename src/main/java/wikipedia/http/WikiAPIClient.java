@@ -53,7 +53,7 @@ public final class WikiAPIClient {
     public String executeHTTPRequest(final String url) {
         HttpGet httpget = new HttpGet(url);
         httpget.setHeader("User-Agent", Const.USER_AGENT);
-        LOG.info("executing request " + httpget.getURI());
+        LOG.debug("executing request " + httpget.getURI());
         BasicHttpContext context = new BasicHttpContext();
         try {
             HttpResponse response = this.httpclient.execute(httpget, context);
