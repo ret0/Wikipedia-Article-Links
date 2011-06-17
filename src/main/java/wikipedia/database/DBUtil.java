@@ -184,17 +184,21 @@ public final class DBUtil {
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(8);
         final int middle = 50000;
-        final List<Object[]> batchArguments = queryPart(0, middle);
-        final List<Object[]> batchArguments2 = queryPart(middle, middle * 2);
-        final List<Object[]> batchArguments3 = queryPart(middle * 2, middle * 3);
-        final List<Object[]> batchArguments4 = queryPart(middle * 3, middle * 4);
-        List<List<Object[]>> sections = Lists.newArrayList(batchArguments, batchArguments2, batchArguments3, batchArguments4);
+        List<List<Object[]>> sections = Lists.newArrayList(
+                queryPart(0, middle),
+                queryPart(middle, middle * 2),
+                queryPart(middle * 2, middle * 3),
+                queryPart(middle * 3, middle * 4),
+                queryPart(middle * 4, middle * 5),
+                queryPart(middle * 5, middle * 6),
+                queryPart(middle * 7, middle * 8));
 
         for (final List<Object[]> section : sections) {
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
+                    LOG.info("Batch done");
                 }});
         }
 
@@ -207,32 +211,11 @@ public final class DBUtil {
         while (!threadPool.isTerminated()) {
             LOG.debug("Waiting for Thread-Pool termination");
         }
-
-
-//        LOG.info("Starting BATCH!1");
-//        new Runnable() {
-//            @Override
-//            public void run() {
-//                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments);
-//
-//            }
-//        }.run();
-//
-//        LOG.info("Starting BATCH!2");
-//        new Runnable() {
-//            @Override
-//            public void run() {
-//                jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", batchArguments2);
-//
-//            }
-//        }.run();
     }
 
     private List<Object[]> queryPart(final int start, final int end) {
         LOG.info("BEFORE QUERY");
         List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start + ", " + end, new Object[] {});
-        LOG.info("AFTER QUERY");
-        int counter = 0;
         final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
