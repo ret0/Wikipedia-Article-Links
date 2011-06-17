@@ -179,7 +179,7 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT * FROM outgoing_links WHERE `target_page_title` LIKE '[[%'", new Object[] {});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT * FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT 500000", new Object[] {});
         int counter = 0;
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
