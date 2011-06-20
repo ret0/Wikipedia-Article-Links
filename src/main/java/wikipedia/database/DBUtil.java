@@ -183,13 +183,13 @@ public final class DBUtil {
     //TEMP!
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(8);
-        final int middle = 50000;
+        final int middle = 200000;
         List<List<Object[]>> sections = Lists.newArrayList(
                 queryPart(0, middle),
-                queryPart(middle, middle * 2),
-                queryPart(middle * 2, middle * 3),
-                queryPart(middle * 3, middle * 4),
-                queryPart(middle * 4, middle * 5));
+                queryPart(middle + 1, middle * 2),
+                queryPart(middle * 2 + 1, middle * 3));
+                //queryPart(middle * 3, middle * 4),
+                //queryPart(middle * 4, middle * 5));
                 //queryPart(middle * 5, middle * 6),
                 //queryPart(middle * 7, middle * 8));
 
@@ -224,10 +224,6 @@ public final class DBUtil {
             String fixedPageName = oldPageName;
             fixedPageName = StringUtils.remove(fixedPageName, "[[");
             fixedPageName = StringUtils.strip(fixedPageName);
-            //LOG.info("OLD: " + oldPageName);
-            //if(counter++ % 5000 == 0) {
-             //   LOG.info("[" + counter + "]NEW: " + fixedPageName);
-            //}
             batchArguments.add(new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
         }
         return batchArguments;
