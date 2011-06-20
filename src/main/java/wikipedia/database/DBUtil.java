@@ -205,7 +205,7 @@ public final class DBUtil {
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    final int start = index * middle;
+                    final int start = middle;
                     final int end = middle * (index + 1);
                     LOG.info("Added Task: " + start + " / " + end);
                     final List<Object[]> section = queryPart(start, end);
