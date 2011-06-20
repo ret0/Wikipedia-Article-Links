@@ -184,7 +184,7 @@ public final class DBUtil {
     //TEMP!
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(1);
-        final int middle = 2000;
+        final int middle = 2500;
         //jdbcTemplate.ge
         //List<List<Object[]>> sections = Lists.newArrayList();
 //        for (int i = 1; i <= 200; i++) {
@@ -203,7 +203,7 @@ public final class DBUtil {
 
         //for (final List<Object[]> section : sections) {
 
-        for (int i = 1; i <= 200; i++) {
+        for (int i = 1; i <= 1200; i++) {
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
