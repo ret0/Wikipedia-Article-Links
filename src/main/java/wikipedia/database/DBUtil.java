@@ -185,7 +185,6 @@ public final class DBUtil {
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(3);
         final int middle = 2500;
-        //jdbcTemplate.ge
         //List<List<Object[]>> sections = Lists.newArrayList();
 //        for (int i = 1; i <= 200; i++) {
 //            final int start = i * middle + 1;
@@ -193,13 +192,6 @@ public final class DBUtil {
 //            sections.add(queryPart(start, end));
 //            LOG.info("Added Task: " + start + " / " + end);
 //        }
-                //queryPart(0, middle),
-                //queryPart(middle + 1, middle * 2),
-                //queryPart(middle * 2 + 1, middle * 3));
-                //queryPart(middle * 3, middle * 4),
-                //queryPart(middle * 4, middle * 5));
-                //queryPart(middle * 5, middle * 6),
-                //queryPart(middle * 7, middle * 8));
 
         //for (final List<Object[]> section : sections) {
         List<String> dates = Lists.newArrayList("2010-06-01 00:00:00", "2010-05-01 00:00:00", "2010-04-01 00:00:00");
@@ -234,7 +226,7 @@ public final class DBUtil {
 
     private List<Object[]> queryPart(final int start, final String date) {
         LOG.info("BEFORE QUERY");
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' AND revision_date = '?' LIMIT " + start, new Object[] {date});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' AND revision_date = ? LIMIT " + start, new Object[] {date});
         final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
