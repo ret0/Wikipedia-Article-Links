@@ -182,7 +182,7 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        ExecutorService threadPool = Executors.newFixedThreadPool(8);
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
         final int middle = 1000;
         List<List<Object[]>> sections = Lists.newArrayList();
         for (int i = 1; i <= 10; i++) {
