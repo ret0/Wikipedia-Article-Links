@@ -183,7 +183,7 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        ExecutorService threadPool = Executors.newFixedThreadPool(3);
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
         final int middle = 2500;
         //List<List<Object[]>> sections = Lists.newArrayList();
 //        for (int i = 1; i <= 200; i++) {
@@ -194,22 +194,21 @@ public final class DBUtil {
 //        }
 
         //for (final List<Object[]> section : sections) {
-        List<String> dates = Lists.newArrayList("2010-06-01 00:00:00", "2010-05-01 00:00:00", "2010-04-01 00:00:00");
+        //List<String> dates = Lists.newArrayList("2010-06-01 00:00:00", "2010-05-01 00:00:00", "2010-04-01 00:00:00");
 
-        for(final String date : dates) {
-        //for (int i = 1; i <= 1200; i++) {
+        //for(final String date : dates) {
+        for (int i = 1; i <= 500; i++) {
+            final int index = i;
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    for (int i = 1; i <= 500; i++) {
-                    LOG.info("Added Task: " + i);
-                    final List<Object[]> section = queryPart(middle, date);
+                    LOG.info("Added Task: " + index);
+                    final List<Object[]> section = queryPart(middle);
                     transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                         @Override
                         protected void doInTransactionWithoutResult(final TransactionStatus status) {
                             jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
                         }});
-                    }
                 }});
         }
 
@@ -224,9 +223,9 @@ public final class DBUtil {
         }
     }
 
-    private List<Object[]> queryPart(final int start, final String date) {
+    private List<Object[]> queryPart(final int start) {
         LOG.info("BEFORE QUERY");
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' AND revision_date = ? LIMIT " + start, new Object[] {date});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start, new Object[] {});
         final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
