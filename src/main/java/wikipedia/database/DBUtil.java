@@ -183,14 +183,14 @@ public final class DBUtil {
     //TEMP!
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(1);
-        final int middle = 1000;
+        final int middle = 2000;
         List<List<Object[]>> sections = Lists.newArrayList();
-        for (int i = 1; i <= 10; i++) {
-            final int start = i * middle + 1;
-            final int end = middle * (i + 1);
-            sections.add(queryPart(start, end));
-            LOG.info("Added Task: " + start + " / " + end);
-        }
+//        for (int i = 1; i <= 200; i++) {
+//            final int start = i * middle + 1;
+//            final int end = middle * (i + 1);
+//            sections.add(queryPart(start, end));
+//            LOG.info("Added Task: " + start + " / " + end);
+//        }
                 //queryPart(0, middle),
                 //queryPart(middle + 1, middle * 2),
                 //queryPart(middle * 2 + 1, middle * 3));
@@ -199,12 +199,18 @@ public final class DBUtil {
                 //queryPart(middle * 5, middle * 6),
                 //queryPart(middle * 7, middle * 8));
 
-        for (final List<Object[]> section : sections) {
+        //for (final List<Object[]> section : sections) {
+        for (int i = 1; i <= 200; i++) {
+            final int index = i;
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
+                    final int start = index * middle + 1;
+                    final int end = middle * (index + 1);
+                    LOG.info("Added Task: " + start + " / " + end);
+                    final List<Object[]> section = queryPart(start, end);
                     jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
-                    LOG.info("Batch done");
+                    //LOG.info("Batch done");
                 }});
         }
 
