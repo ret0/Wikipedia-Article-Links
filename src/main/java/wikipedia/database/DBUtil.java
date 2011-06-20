@@ -53,9 +53,10 @@ public final class DBUtil {
 
     public DBUtil() {
         XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("context.xml"));
-        jdbcTemplate = new SimpleJdbcTemplate((BasicDataSource) beanFactory.getBean("dataSource"));
+        final BasicDataSource bean = (BasicDataSource) beanFactory.getBean("dataSource");
+        jdbcTemplate = new SimpleJdbcTemplate(bean);
         DataSourceTransactionManager dstm = new DataSourceTransactionManager(
-                (BasicDataSource) beanFactory.getBean("dataSource"));
+                bean);
         transactionTemplate = new TransactionTemplate(dstm);
     }
 
@@ -184,7 +185,8 @@ public final class DBUtil {
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(1);
         final int middle = 2000;
-        List<List<Object[]>> sections = Lists.newArrayList();
+        //jdbcTemplate.ge
+        //List<List<Object[]>> sections = Lists.newArrayList();
 //        for (int i = 1; i <= 200; i++) {
 //            final int start = i * middle + 1;
 //            final int end = middle * (i + 1);
@@ -200,17 +202,18 @@ public final class DBUtil {
                 //queryPart(middle * 7, middle * 8));
 
         //for (final List<Object[]> section : sections) {
+
         for (int i = 1; i <= 200; i++) {
-            final int index = i;
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    final int start = middle;
-                    final int end = middle * (index + 1);
-                    LOG.info("Added Task: " + start + " / " + end);
-                    final List<Object[]> section = queryPart(start, end);
-                    jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
-                    //LOG.info("Batch done");
+                    LOG.info("Added Task: ");
+                    final List<Object[]> section = queryPart(middle);
+                    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                        @Override
+                        protected void doInTransactionWithoutResult(final TransactionStatus status) {
+                            jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
+                        }});
                 }});
         }
 
@@ -225,7 +228,7 @@ public final class DBUtil {
         }
     }
 
-    private List<Object[]> queryPart(final int start, final int end) {
+    private List<Object[]> queryPart(final int start) {
         LOG.info("BEFORE QUERY");
         List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start, new Object[] {});
         final List<Object[]> batchArguments = Lists.newArrayList();
