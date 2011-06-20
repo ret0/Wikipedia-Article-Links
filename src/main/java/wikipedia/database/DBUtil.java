@@ -205,7 +205,7 @@ public final class DBUtil {
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    final int start = index * middle + 1;
+                    final int start = index * middle;
                     final int end = middle * (index + 1);
                     LOG.info("Added Task: " + start + " / " + end);
                     final List<Object[]> section = queryPart(start, end);
@@ -227,7 +227,7 @@ public final class DBUtil {
 
     private List<Object[]> queryPart(final int start, final int end) {
         LOG.info("BEFORE QUERY");
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start + ", " + end, new Object[] {});
+        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start, new Object[] {});
         final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
             final String oldPageName = (String) entry.get("target_page_title");
