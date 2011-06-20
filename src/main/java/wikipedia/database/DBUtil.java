@@ -183,11 +183,17 @@ public final class DBUtil {
     //TEMP!
     public void fixBrokenLinks() {
         ExecutorService threadPool = Executors.newFixedThreadPool(8);
-        final int middle = 200000;
-        List<List<Object[]>> sections = Lists.newArrayList(
-                queryPart(0, middle),
-                queryPart(middle + 1, middle * 2),
-                queryPart(middle * 2 + 1, middle * 3));
+        final int middle = 1000;
+        List<List<Object[]>> sections = Lists.newArrayList();
+        for (int i = 1; i <= 10; i++) {
+            final int start = i * middle + 1;
+            final int end = middle * (i + 1);
+            sections.add(queryPart(start, end));
+            LOG.info("Added Task: " + start + " / " + end);
+        }
+                //queryPart(0, middle),
+                //queryPart(middle + 1, middle * 2),
+                //queryPart(middle * 2 + 1, middle * 3));
                 //queryPart(middle * 3, middle * 4),
                 //queryPart(middle * 4, middle * 5));
                 //queryPart(middle * 5, middle * 6),
