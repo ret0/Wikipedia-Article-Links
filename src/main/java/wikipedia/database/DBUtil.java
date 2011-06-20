@@ -5,9 +5,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang.StringUtils;
@@ -183,48 +180,19 @@ public final class DBUtil {
 
     //TEMP!
     public void fixBrokenLinks() {
-        ExecutorService threadPool = Executors.newFixedThreadPool(1);
-        final int middle = 2500;
-        //List<List<Object[]>> sections = Lists.newArrayList();
-//        for (int i = 1; i <= 200; i++) {
-//            final int start = i * middle + 1;
-//            final int end = middle * (i + 1);
-//            sections.add(queryPart(start, end));
-//            LOG.info("Added Task: " + start + " / " + end);
-//        }
-
-        //for (final List<Object[]> section : sections) {
-        //List<String> dates = Lists.newArrayList("2010-06-01 00:00:00", "2010-05-01 00:00:00", "2010-04-01 00:00:00");
-
-        //for(final String date : dates) {
+        final int middle = 5000;
         for (int i = 1; i <= 500; i++) {
-            final int index = i;
-            threadPool.execute(new Runnable() {
+            LOG.info("Added Task: " + i);
+            final List<Object[]> section = queryPart(middle);
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                 @Override
-                public void run() {
-                    LOG.info("Added Task: " + index);
-                    final List<Object[]> section = queryPart(middle);
-                    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-                        @Override
-                        protected void doInTransactionWithoutResult(final TransactionStatus status) {
-                            jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
-                        }});
+                protected void doInTransactionWithoutResult(final TransactionStatus status) {
+                    jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
                 }});
-        }
-
-        threadPool.shutdown();
-        try {
-            threadPool.awaitTermination(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            LOG.error("Error while shutting down Threadpool", e);
-        }
-        while (!threadPool.isTerminated()) {
-            LOG.debug("Waiting for Thread-Pool termination");
         }
     }
 
     private List<Object[]> queryPart(final int start) {
-        LOG.info("BEFORE QUERY");
         List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start, new Object[] {});
         final List<Object[]> batchArguments = Lists.newArrayList();
         for (Map<String, Object> entry : queryForMap) {
