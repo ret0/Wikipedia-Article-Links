@@ -189,9 +189,9 @@ public final class DBUtil {
                 queryPart(middle, middle * 2),
                 queryPart(middle * 2, middle * 3),
                 queryPart(middle * 3, middle * 4),
-                queryPart(middle * 4, middle * 5),
-                queryPart(middle * 5, middle * 6),
-                queryPart(middle * 7, middle * 8));
+                queryPart(middle * 4, middle * 5));
+                //queryPart(middle * 5, middle * 6),
+                //queryPart(middle * 7, middle * 8));
 
         for (final List<Object[]> section : sections) {
             threadPool.execute(new Runnable() {
