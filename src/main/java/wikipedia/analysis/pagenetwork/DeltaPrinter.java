@@ -27,15 +27,19 @@ import com.google.common.collect.Sets;
  */
 public final class DeltaPrinter {
 
+    private static final String ITEM_SEPARATOR = ", \n";
+
     private static final Logger LOG = LoggerFactory.getLogger(DeltaPrinter.class.getName());
 
     private static final int NUM_REVISIONS = 35;
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
+    private final String lang;
 
-    public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames) {
+    public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames, final String lang) {
         this.categories = categories;
         this.allTimeFrames = allTimeFrames;
+        this.lang = lang;
     }
 
     public static void main(final String[] args) throws IOException {
@@ -44,7 +48,7 @@ public final class DeltaPrinter {
         List<String> categories = Lists.newArrayList();
         categories.addAll(CategoryLists.ENGLISH_MUSIC);
         categories.addAll(CategoryLists.CLASSICAL_MUSIC);
-        DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames);
+        DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
@@ -56,7 +60,8 @@ public final class DeltaPrinter {
         for (DateTime dateTime : allTimeFramesOldToNew) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
             List<String> nodeDebug = Lists.newArrayList();
-            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight, database).getGraphAtDate(nodeDebug));
+            dateGraphMap.add(new NetworkBuilder(categories, lang, dateMidnight, database)
+                    .getGraphAtDate(nodeDebug));
         }
         return generateTimeFrameInformation(dateGraphMap);
     }
@@ -70,13 +75,12 @@ public final class DeltaPrinter {
 
     private String printAllDeltaGraphs(final List<TimeFrameGraph> allFrameGraphs) {
         List<GraphDelta> allDeltas = prepareGraphDeltas(allFrameGraphs);
-        StringBuilder allDeltasJson = new StringBuilder();
         List<String> deltaElements = Lists.newArrayList();
-        allDeltasJson.append("var frameInformation = [");
+        StringBuilder allDeltasJson = new StringBuilder("var frameInformation = [");
         for (GraphDelta graphDelta : allDeltas) {
             deltaElements.add(graphDelta.toJSON());
         }
-        allDeltasJson.append(StringUtils.join(deltaElements, ", \n"));
+        allDeltasJson.append(StringUtils.join(deltaElements, ITEM_SEPARATOR));
         allDeltasJson.append("];");
         return allDeltasJson.toString();
 
@@ -94,14 +98,14 @@ public final class DeltaPrinter {
     }
 
     private List<String> prepareDelList(final TimeFrameGraph old,
-                                               final TimeFrameGraph current) {
+                                        final TimeFrameGraph current) {
         Set<String> oldSet = old.getNameIndexMap().keySet();
         Set<String> newSet = current.getNameIndexMap().keySet();
         return Lists.newArrayList(Sets.difference(oldSet, newSet));
     }
 
     private List<String> prepareAddList(final TimeFrameGraph old,
-                                               final TimeFrameGraph current) {
+                                        final TimeFrameGraph current) {
         Set<String> oldSet = old.getNameIndexMap().keySet();
         Set<String> newSet = current.getNameIndexMap().keySet();
         return Lists.newArrayList(Sets.difference(newSet, oldSet));
@@ -111,6 +115,7 @@ public final class DeltaPrinter {
         StringBuilder completeGraphJson = new StringBuilder();
 
         completeGraphJson.append("var initialGraph = {");
+        completeGraphJson.append("date: \"" + timeFrameGraph.getFormatedDate() + "\"" + ITEM_SEPARATOR);
         completeGraphJson.append("nodes: [");
 
         // print all nodes
@@ -121,22 +126,31 @@ public final class DeltaPrinter {
                                                                         // will
                                                                         // break
                                                                         // graph
-            allNodes.add("{nodeName: \"" + fixedName + "\", group: 1}");
+            allNodes.add(printNode(fixedName));
         }
-        completeGraphJson.append(StringUtils.join(allNodes, ", \n"));
+        completeGraphJson.append(StringUtils.join(allNodes, ITEM_SEPARATOR));
         completeGraphJson.append("], links:[");
 
         // print all edges
         List<String> allEdges = Lists.newArrayList();
         Map<String, Integer> nameIndexMap = timeFrameGraph.getNameIndexMap();
         for (GraphEdge edge : timeFrameGraph.getAllEdges()) {
-            allEdges.add("{source: " + nameIndexMap.get(edge.getFrom()) + ", target: "
-                    + nameIndexMap.get(edge.getTo()) + ", value: " + 1 + "}");
+            allEdges.add(printLink(nameIndexMap, edge));
         }
-        completeGraphJson.append(StringUtils.join(allEdges, ", \n"));
+        completeGraphJson.append(StringUtils.join(allEdges, ITEM_SEPARATOR));
 
         completeGraphJson.append("] };");
         return completeGraphJson.toString();
+    }
+
+    private String printNode(final String fixedName) {
+        return "{nodeName: \"" + fixedName + "\", group: 1}";
+    }
+
+    private String printLink(final Map<String, Integer> nameIndexMap,
+                             final GraphEdge edge) {
+        return "{source: " + nameIndexMap.get(edge.getFrom()) + ", target: "
+                + nameIndexMap.get(edge.getTo()) + ", value: " + 1 + "}";
     }
 
 }

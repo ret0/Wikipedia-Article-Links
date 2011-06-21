@@ -10,6 +10,8 @@ import java.util.Map.Entry;
 
 /**
  * Generic Map Sorter
+ * @param <K> Key Type
+ * @param <V> Value Type
  */
 public final class MapSorter<K, V extends Comparable<? super V>> {
 

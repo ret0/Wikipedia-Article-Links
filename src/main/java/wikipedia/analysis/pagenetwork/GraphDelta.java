@@ -6,13 +6,15 @@ import org.apache.commons.lang.StringUtils;
 
 import wikipedia.network.GraphEdge;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 
 /**
  * Bean to create JSON output for the differences between two animation frames.
  */
 public final class GraphDelta {
 
+    private static final String ITEM_SEPARATOR = ", \n";
     private final List<String> add;
     private final List<String> del;
     private final List<GraphEdge> links;
@@ -29,46 +31,38 @@ public final class GraphDelta {
     }
 
     public String toJSON() {
-        StringBuilder json = new StringBuilder();
-        json.append("{");
-        json.append("date: \"").append(formattedDate).append("\", ");
-        json.append("add: [").append(printAllAddNodes()).append("], ");
-        json.append("del: [").append(printAllDelNodes()).append("], ");
-        json.append("links: [").append(printAllLinks()).append("]");
-        json.append("}");
-        return json.toString();
+        return new StringBuilder()
+        .append("{")
+        .append("date: \"").append(formattedDate).append("\", ")
+        .append("add: [").append(printAllAddNodes()).append("], ")
+        .append("del: [").append(printAllDelNodes()).append("], ")
+        .append("links: [").append(printAllLinks()).append("]")
+        .append("}").toString();
     }
 
     private String printAllLinks() {
-        List<String> nodes = Lists.newArrayList();
-        for (GraphEdge link : links) {
-            nodes.add(printLink(link));
-        }
-        return StringUtils.join(nodes, ", \n");
-    }
-
-    private String printLink(final GraphEdge link) {
-        return "{ source: \"" + link.getFrom() + "\", target: \"" + link.getTo() + "\", value: 1 }";
+        return StringUtils.join(Collections2.transform(links, new LinkPrinter()), ITEM_SEPARATOR);
     }
 
     private String printAllDelNodes() {
-        List<String> nodes = Lists.newArrayList();
-        for (String addName : del) {
-            nodes.add(printNode(addName));
-        }
-        return StringUtils.join(nodes, ", \n");
+        return StringUtils.join(Collections2.transform(del, new NodePrinter()), ITEM_SEPARATOR);
     }
 
     private String printAllAddNodes() {
-        List<String> nodes = Lists.newArrayList();
-        for (String addName : add) {
-            nodes.add(printNode(addName));
+        return StringUtils.join(Collections2.transform(add, new NodePrinter()), ITEM_SEPARATOR);
+    }
+
+    /** Functor to print node string to json */
+    private final class NodePrinter implements Function<String, String> {
+        public String apply(final String input) {
+            return "{ nodeName: \"" + input + "\" }";
         }
-        return StringUtils.join(nodes, ", \n");
     }
 
-    private String printNode(final String nodeName) {
-        return "{ nodeName: \"" + nodeName + "\" }";
+    /** Functor to print link string to json */
+    private final class LinkPrinter implements Function<GraphEdge, String> {
+        public String apply(final GraphEdge link) {
+            return "{ source: \"" + link.getFrom() + "\", target: \"" + link.getTo() + "\", value: 1 }";
+        }
     }
-
 }
