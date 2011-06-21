@@ -146,7 +146,7 @@ public final class PageHistoryFetcher {
 
     private void fetchCompleteCategories(final String lang) {
         final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(
-                CategoryLists.CLASSICAL_MUSIC, lang, dataBaseUtil).getAllPagesInAllCategories();
+                CategoryLists.MUSIC_GROUPS, lang, dataBaseUtil).getAllPagesInAllCategories();
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
         try {
