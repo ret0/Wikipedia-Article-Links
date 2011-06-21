@@ -31,7 +31,7 @@ public final class GraphDelta {
     public String toJSON() {
         StringBuilder json = new StringBuilder();
         json.append("{");
-        json.append("date: ").append(formattedDate);
+        json.append("date: \"").append(formattedDate).append("\", ");
         json.append("add: [").append(printAllAddNodes()).append("], ");
         json.append("del: [").append(printAllDelNodes()).append("], ");
         json.append("links: [").append(printAllLinks()).append("]");
