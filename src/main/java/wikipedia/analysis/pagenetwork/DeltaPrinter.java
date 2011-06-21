@@ -6,9 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -36,9 +33,6 @@ public final class DeltaPrinter {
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
 
-    private static final int NUM_THREADS = 8;
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
-
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames) {
         this.categories = categories;
         this.allTimeFrames = allTimeFrames;
@@ -59,28 +53,17 @@ public final class DeltaPrinter {
         for (DateTime dateTime : allTimeFramesOldToNew) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
             List<String> nodeDebug = Lists.newArrayList();
-            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight, database, threadPool).getGraphAtDate(nodeDebug));
+            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight, database).getGraphAtDate(nodeDebug));
 //            try {
 //                FileUtils.writeLines(new File("out/degreeOutput" + dateMidnight.toString() + ".txt"), nodeDebug);
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
         }
-        shutdownThreadPool();
         return generateTimeFrameInformation(dateGraphMap);
     }
 
-    private void shutdownThreadPool() {
-        threadPool.shutdown();
-        try {
-            threadPool.awaitTermination(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            LOG.error("Error while shutting down Threadpool", e);
-        }
-        while (!threadPool.isTerminated()) {
-            LOG.debug("Waiting for all Tasks to terminate");
-        }
-    }
+
 
     public String generateTimeFrameInformation(final List<TimeFrameGraph> allFrameGraphs) {
         StringBuilder jsonOutput = new StringBuilder();

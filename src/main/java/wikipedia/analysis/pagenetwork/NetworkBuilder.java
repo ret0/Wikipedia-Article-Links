@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateMidnight;
 import org.slf4j.Logger;
@@ -35,11 +37,12 @@ public final class NetworkBuilder {
 
     private final Map<Integer, String> allPagesInNetwork;
 
-    private final ExecutorService threadPool;
+    private static final int NUM_THREADS = 8;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
+
 
     public NetworkBuilder(final List<String> categories, final String lang,
-            final DateMidnight dateMidnight, final DBUtil database, final ExecutorService threadPool) {
-        this.threadPool = threadPool;
+            final DateMidnight dateMidnight, final DBUtil database) {
         this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         this.database = database;
         allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
@@ -131,20 +134,37 @@ public final class NetworkBuilder {
                 .<GraphEdge> newArrayList());
         LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
         int taskCounter = 1;
-        //try {
+        try {
             for (Entry<Integer, String> entry : allPagesInNetworkList.entrySet()) {
                 final int pageId = entry.getKey();
                 final String pageName = entry.getValue();
                 threadPool.execute(new SQLExecutor(pageId, allPageNamesInNetwork, pageName,
                         allLinksInNetwork, taskCounter++, revisionDateTime));
             }
-     //   } finally {
-     //       shutdownThreadPool();
-     //   }
+        } finally {
+            shutdownThreadPool();
+        }
+            try {
+                LOG.info("Before Await");
+                threadPool.awaitTermination(15, TimeUnit.MINUTES);
+                LOG.info("After Await");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         return allLinksInNetwork;
     }
 
-
+    private void shutdownThreadPool() {
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            LOG.error("Error while shutting down Threadpool", e);
+        }
+        while (!threadPool.isTerminated()) {
+            LOG.debug("Waiting for all Tasks to terminate");
+        }
+    }
 
     /**
      * Fetches Information from DB and calculates all incomming links to a given
