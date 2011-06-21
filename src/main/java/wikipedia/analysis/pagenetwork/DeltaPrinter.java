@@ -41,7 +41,10 @@ public final class DeltaPrinter {
     public static void main(final String[] args) throws IOException {
         List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(NUM_REVISIONS,
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
-        DeltaPrinter dp = new DeltaPrinter(CategoryLists.ENGLISH_MUSIC, allTimeFrames);
+        List<String> categories = Lists.newArrayList();
+        categories.addAll(CategoryLists.ENGLISH_MUSIC);
+        categories.addAll(CategoryLists.CLASSICAL_MUSIC);
+        DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames);
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
