@@ -88,7 +88,7 @@ public final class DeltaPrinter {
             TimeFrameGraph old = allFrameGraphs.get(index - 1);
             TimeFrameGraph current = allFrameGraphs.get(index);
             allDeltas.add(new GraphDelta(prepareAddList(old, current), prepareDelList(old, current),
-                    current.getAllEdges()));
+                    current.getAllEdges(), current.getFormatedDate()));
         }
         return allDeltas;
     }

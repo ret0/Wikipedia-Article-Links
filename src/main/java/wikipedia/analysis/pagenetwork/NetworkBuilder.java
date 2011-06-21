@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +41,12 @@ public final class NetworkBuilder {
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
+    private final DateTime dateTime;
+
 
     public NetworkBuilder(final List<String> categories, final String lang,
             final DateMidnight dateMidnight, final DBUtil database) {
+        this.dateTime = dateMidnight.toDateTime();
         this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         this.database = database;
         allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
@@ -92,7 +96,7 @@ public final class NetworkBuilder {
                 }
             }
         }
-        return new TimeFrameGraph(nameIndexMap, edgeOutput);
+        return new TimeFrameGraph(nameIndexMap, edgeOutput, dateTime);
     }
 
 

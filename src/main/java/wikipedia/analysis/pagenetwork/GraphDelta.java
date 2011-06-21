@@ -16,16 +16,22 @@ public final class GraphDelta {
     private final List<String> add;
     private final List<String> del;
     private final List<GraphEdge> links;
+    private final String formattedDate;
 
-    public GraphDelta(final List<String> add, final List<String> del, final List<GraphEdge> links) {
+    public GraphDelta(final List<String> add,
+                      final List<String> del,
+                      final List<GraphEdge> links,
+                      final String formattedDate) {
         this.add = add;
         this.del = del;
         this.links = links;
+        this.formattedDate = formattedDate;
     }
 
     public String toJSON() {
         StringBuilder json = new StringBuilder();
         json.append("{");
+        json.append("date: ").append(formattedDate);
         json.append("add: [").append(printAllAddNodes()).append("], ");
         json.append("del: [").append(printAllDelNodes()).append("], ");
         json.append("links: [").append(printAllLinks()).append("]");
