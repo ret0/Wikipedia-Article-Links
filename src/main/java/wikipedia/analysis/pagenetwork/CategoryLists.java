@@ -38,10 +38,25 @@ public final class CategoryLists {
             // ------------------
             "Category:Grammy_Award_winners", "Category:World_Music_Awards_winners");
 
-    public static final List<String> CLASSICAL_MUSIC = ImmutableList.of("Category:German_composers",
-            "Category:German_classical_organists", "Category:Baroque composers", "Category:Classical composers of church music",
-            "Category:Classical era composers", "Category:Opera composers", "Category:Italian composers", "Category:English composers",
-            "Category:Polish_classical_pianists", "Category:Polish_composers", "Category:French_composers", "Category:German_composers",
-            "Category:Romantic_composers", "Category:19th-century_composers", "Category:18th-century_composers", "Category:20th-century_composers");
+    public static final List<String> CLASSICAL_MUSIC = ImmutableList.of(
+            "Category:German_composers",
+            "Category:Italian composers",
+            "Category:French_composers",
+            "Category:Polish_composers",
+            "Category:English composers",
+            // ------------------
+            "Category:Classical era composers",
+            "Category:Romantic_composers",
+            "Category:Baroque composers",
+            "Category:Classical composers of church music",
+            "Category:Opera composers",
+            // ------------------
+            "Category:17th-century_composers",
+            "Category:18th-century_composers",
+            "Category:19th-century_composers",
+            "Category:20th-century_composers",
+            // ------------------
+            "Category:German_classical_organists",
+            "Category:Polish_classical_pianists");
 
 }
