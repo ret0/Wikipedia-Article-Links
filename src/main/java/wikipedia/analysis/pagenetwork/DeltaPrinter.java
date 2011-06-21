@@ -57,16 +57,9 @@ public final class DeltaPrinter {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
             List<String> nodeDebug = Lists.newArrayList();
             dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight, database).getGraphAtDate(nodeDebug));
-//            try {
-//                FileUtils.writeLines(new File("out/degreeOutput" + dateMidnight.toString() + ".txt"), nodeDebug);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
         }
         return generateTimeFrameInformation(dateGraphMap);
     }
-
-
 
     public String generateTimeFrameInformation(final List<TimeFrameGraph> allFrameGraphs) {
         StringBuilder jsonOutput = new StringBuilder();
@@ -79,13 +72,12 @@ public final class DeltaPrinter {
         List<GraphDelta> allDeltas = prepareGraphDeltas(allFrameGraphs);
         StringBuilder allDeltasJson = new StringBuilder();
         List<String> deltaElements = Lists.newArrayList();
-        allDeltasJson.append("var frameInformation = {");
-        int deltaCounter = 1;
+        allDeltasJson.append("var frameInformation = [");
         for (GraphDelta graphDelta : allDeltas) {
-            deltaElements.add(deltaCounter++ + " : " + graphDelta.toJSON());
+            deltaElements.add(graphDelta.toJSON());
         }
         allDeltasJson.append(StringUtils.join(deltaElements, ", \n"));
-        allDeltasJson.append("};");
+        allDeltasJson.append("];");
         return allDeltasJson.toString();
 
     }
