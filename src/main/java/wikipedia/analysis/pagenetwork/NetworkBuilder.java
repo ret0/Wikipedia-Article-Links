@@ -77,7 +77,6 @@ public final class NetworkBuilder {
         }
 
 
-
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         // TODO loop not optimal
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
@@ -144,13 +143,6 @@ public final class NetworkBuilder {
         } finally {
             shutdownThreadPool();
         }
-            try {
-                LOG.info("Before Await");
-                threadPool.awaitTermination(15, TimeUnit.MINUTES);
-                LOG.info("After Await");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         return allLinksInNetwork;
     }
 
