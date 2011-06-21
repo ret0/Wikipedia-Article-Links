@@ -59,4 +59,9 @@ public final class CategoryLists {
             "Category:German_classical_organists",
             "Category:Polish_classical_pianists");
 
+
+    public static final List<String> MUSIC_GROUPS = ImmutableList.of(
+            "Category:2000s_music_groups",
+            "Category:1990s_music_groups");
+
 }

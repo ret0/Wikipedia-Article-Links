@@ -107,7 +107,7 @@ public final class NetworkBuilder {
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
         final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
         final boolean nodeQualified = magicNumber >= 1.35f;
-        Set<String> selectedPeople = Sets.newHashSet("Michael Jackson", "Justin Bieber", "Lady Gaga", "Bob Dylan", "Elvis Presley");
+       // Set<String> selectedPeople = Sets.newHashSet("Michael Jackson", "Justin Bieber", "Lady Gaga", "Bob Dylan", "Elvis Presley");
 //        if(selectedPeople.contains(targetPage)) {
         if (magicNumber > 1.25) {
             nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + totalNumberOfLinks + "=" + magicNumber);

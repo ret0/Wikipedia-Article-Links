@@ -39,7 +39,7 @@ public final class CategoryMemberFetcher {
 
     public static void main(final String[] args) {
         // manually refresh all category members
-        CategoryMemberFetcher cmf = new CategoryMemberFetcher(CategoryLists.CLASSICAL_MUSIC, "en",
+        CategoryMemberFetcher cmf = new CategoryMemberFetcher(CategoryLists.MUSIC_GROUPS, "en",
                 new DBUtil());
         cmf.updateAllCategoryMembersInDB();
     }
