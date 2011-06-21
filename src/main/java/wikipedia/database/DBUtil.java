@@ -1,13 +1,11 @@
 package wikipedia.database;
 
-import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -178,35 +176,6 @@ public final class DBUtil {
         }
     }
 
-    //TEMP!
-    public void fixBrokenLinks() {
-        final int middle = 5000;
-        for (int i = 1; i <= 500; i++) {
-            LOG.info("Added Task: " + i);
-            final List<Object[]> section = queryPart(middle);
-            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-                @Override
-                protected void doInTransactionWithoutResult(final TransactionStatus status) {
-                    jdbcTemplate.batchUpdate("UPDATE `outgoing_links` SET `target_page_title` = ? WHERE src_page_id = ? AND revision_date = ? AND target_page_title LIKE ?;", section);
-                }});
-        }
-    }
-
-    private List<Object[]> queryPart(final int start) {
-        List<Map<String, Object>> queryForMap = jdbcTemplate.queryForList("SELECT target_page_title, src_page_id, revision_date FROM outgoing_links WHERE `target_page_title` LIKE '[[%' LIMIT " + start, new Object[] {});
-        final List<Object[]> batchArguments = Lists.newArrayList();
-        for (Map<String, Object> entry : queryForMap) {
-            final String oldPageName = (String) entry.get("target_page_title");
-            final int pageId = (Integer) entry.get("src_page_id");
-            final Timestamp revisionDate = (Timestamp) entry.get("revision_date");
-            String fixedPageName = oldPageName;
-            fixedPageName = StringUtils.remove(fixedPageName, "[[");
-            fixedPageName = StringUtils.strip(fixedPageName);
-            batchArguments.add(new Object[] {fixedPageName, pageId, revisionDate, oldPageName});
-        }
-        return batchArguments;
-    }
-
     private void storePageEntry(final String lang,
                                 final Integer pageId,
                                 final String pageTitle) {
@@ -263,10 +232,6 @@ public final class DBUtil {
                     (String) resultRow.get("page_title"));
         }
         return categoryMembers;
-    }
-
-    public static void main(final String[] args) {
-        new DBUtil().fixBrokenLinks();
     }
 
 }

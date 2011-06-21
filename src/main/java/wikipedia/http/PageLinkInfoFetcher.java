@@ -18,6 +18,8 @@ import wikipedia.xml.Page;
 import wikipedia.xml.Rev;
 import wikipedia.xml.XMLTransformer;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
 /**
@@ -77,7 +79,16 @@ public final class PageLinkInfoFetcher {
             final String link = matcher.group(matcher.groupCount());
             allInternalLinks.add(extractPageName(link));
         }
-        return allInternalLinks;
+        return filterUnwantedLinks(allInternalLinks);
+    }
+
+    private static List<String> filterUnwantedLinks(final List<String> allInternalLinks) {
+        return Lists.newArrayList(Collections2.filter(allInternalLinks, new Predicate<String>() {
+            @Override
+            public boolean apply(final String input) {
+                return !StringUtils.startsWith(input, "Category:");
+            }
+        }));
     }
 
     private static String extractPageName(final String link) {

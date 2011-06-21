@@ -6,12 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import wikipedia.database.DBUtil;
 import wikipedia.http.PageHistoryFetcher;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -24,9 +30,14 @@ import com.google.common.collect.Sets;
  */
 public final class DeltaPrinter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DeltaPrinter.class.getName());
+
     private static final int NUM_REVISIONS = 35;
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
+
+    private static final int NUM_THREADS = 8;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames) {
         this.categories = categories;
@@ -36,8 +47,7 @@ public final class DeltaPrinter {
     public static void main(final String[] args) throws IOException {
         List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(NUM_REVISIONS,
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
-
-        DeltaPrinter dp = new DeltaPrinter(CategoryLists.ENGLISH_MUSIC, allTimeFrames);
+        DeltaPrinter dp = new DeltaPrinter(CategoryLists.CLASSICAL_MUSIC, allTimeFrames);
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
     }
@@ -45,17 +55,31 @@ public final class DeltaPrinter {
     private String buildNetworksAndGenerateInfo() {
         List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
         List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
+        DBUtil database = new DBUtil();
         for (DateTime dateTime : allTimeFramesOldToNew) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
             List<String> nodeDebug = Lists.newArrayList();
-            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight).getGraphAtDate(nodeDebug));
-            try {
-                FileUtils.writeLines(new File("out/degreeOutput" + dateMidnight.toString() + ".txt"), nodeDebug);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            dateGraphMap.add(new NetworkBuilder(categories, "en", dateMidnight, database, threadPool).getGraphAtDate(nodeDebug));
+//            try {
+//                FileUtils.writeLines(new File("out/degreeOutput" + dateMidnight.toString() + ".txt"), nodeDebug);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
+        shutdownThreadPool();
         return generateTimeFrameInformation(dateGraphMap);
+    }
+
+    private void shutdownThreadPool() {
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            LOG.error("Error while shutting down Threadpool", e);
+        }
+        while (!threadPool.isTerminated()) {
+            LOG.debug("Waiting for all Tasks to terminate");
+        }
     }
 
     public String generateTimeFrameInformation(final List<TimeFrameGraph> allFrameGraphs) {
