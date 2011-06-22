@@ -31,7 +31,7 @@ public final class DeltaPrinter {
 
     private static final Logger LOG = LoggerFactory.getLogger(DeltaPrinter.class.getName());
 
-    private static final int NUM_REVISIONS = 35;
+    private static final int NUM_REVISIONS = 20;
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
     private final String lang;
@@ -47,7 +47,7 @@ public final class DeltaPrinter {
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
         List<String> categories = Lists.newArrayList();
         categories.addAll(CategoryLists.ENGLISH_MUSIC);
-        categories.addAll(CategoryLists.CLASSICAL_MUSIC);
+        //categories.addAll(CategoryLists.CLASSICAL_MUSIC);
         DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
         FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
