@@ -77,7 +77,7 @@ public final class DeltaPrinter {
     private String printAllDeltaGraphs(final List<TimeFrameGraph> allFrameGraphs) {
         List<GraphDelta> allDeltas = prepareGraphDeltas(allFrameGraphs);
         List<String> deltaElements = Lists.newArrayList();
-        StringBuilder allDeltasJson = new StringBuilder("var frameInformation = [");
+        StringBuilder allDeltasJson = new StringBuilder(", \"frameInformation\": [");
         for (GraphDelta graphDelta : allDeltas) {
             deltaElements.add(graphDelta.toJSON());
         }
@@ -115,9 +115,9 @@ public final class DeltaPrinter {
     private String printCompleteGraphAsJSON(final TimeFrameGraph timeFrameGraph) {
         StringBuilder completeGraphJson = new StringBuilder();
 
-        completeGraphJson.append("var initialGraph = {");
-        completeGraphJson.append("date: \"" + timeFrameGraph.getFormatedDate() + "\"" + ITEM_SEPARATOR);
-        completeGraphJson.append("nodes: [");
+        completeGraphJson.append("{ \"initialGraph\": {");
+        completeGraphJson.append("\"date\": \"" + timeFrameGraph.getFormatedDate() + "\"" + ITEM_SEPARATOR);
+        completeGraphJson.append("\"nodes\": [");
 
         // print all nodes
         List<String> allNodes = Lists.newArrayList();
@@ -130,7 +130,7 @@ public final class DeltaPrinter {
             allNodes.add(printNode(fixedName));
         }
         completeGraphJson.append(StringUtils.join(allNodes, ITEM_SEPARATOR));
-        completeGraphJson.append("], links:[");
+        completeGraphJson.append("], \"links\":[");
 
         // print all edges
         List<String> allEdges = Lists.newArrayList();
@@ -140,18 +140,18 @@ public final class DeltaPrinter {
         }
         completeGraphJson.append(StringUtils.join(allEdges, ITEM_SEPARATOR));
 
-        completeGraphJson.append("] };");
+        completeGraphJson.append("] }}");
         return completeGraphJson.toString();
     }
 
     private String printNode(final String fixedName) {
-        return "{nodeName: \"" + fixedName + "\", group: 1}";
+        return "{\"nodeName\": \"" + fixedName + "\", \"group\": 1}";
     }
 
     private String printLink(final Map<String, Integer> nameIndexMap,
                              final GraphEdge edge) {
-        return "{source: " + nameIndexMap.get(edge.getFrom()) + ", target: "
-                + nameIndexMap.get(edge.getTo()) + ", value: " + 1 + "}";
+        return "{\"source\": " + nameIndexMap.get(edge.getFrom()) + ", \"target\": "
+                + nameIndexMap.get(edge.getTo()) + ", \"value\": " + 1 + "}";
     }
 
 }

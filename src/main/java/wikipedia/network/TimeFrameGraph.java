@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joda.time.DateTime;
-
-import wikipedia.database.DBUtil;
+import org.joda.time.format.DateTimeFormat;
 
 /**
  * Encapsulates the state of the graph at a given frame
@@ -33,7 +32,7 @@ public final class TimeFrameGraph {
     }
 
     public String getFormatedDate() {
-        return timeOfGraph.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+        return timeOfGraph.toString(DateTimeFormat.shortDate());
     }
 
 }

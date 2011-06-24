@@ -33,10 +33,10 @@ public final class GraphDelta {
     public String toJSON() {
         return new StringBuilder()
         .append("{")
-        .append("date: \"").append(formattedDate).append("\", ")
-        .append("add: [").append(printAllAddNodes()).append("], ")
-        .append("del: [").append(printAllDelNodes()).append("], ")
-        .append("links: [").append(printAllLinks()).append("]")
+        .append("\"date\": \"").append(formattedDate).append("\", ")
+        .append("\"add\": [").append(printAllAddNodes()).append("], ")
+        .append("\"del\": [").append(printAllDelNodes()).append("], ")
+        .append("\"links\": [").append(printAllLinks()).append("]")
         .append("}").toString();
     }
 
@@ -55,14 +55,14 @@ public final class GraphDelta {
     /** Functor to print node string to json */
     private final class NodePrinter implements Function<String, String> {
         public String apply(final String input) {
-            return "{ nodeName: \"" + input + "\" }";
+            return "{ \"nodeName\": \"" + input + "\" }";
         }
     }
 
     /** Functor to print link string to json */
     private final class LinkPrinter implements Function<GraphEdge, String> {
         public String apply(final GraphEdge link) {
-            return "{ source: \"" + link.getFrom() + "\", target: \"" + link.getTo() + "\", value: 1 }";
+            return "{ \"source\": \"" + link.getFrom() + "\", \"target\": \"" + link.getTo() + "\", \"value\": 1 }";
         }
     }
 }
