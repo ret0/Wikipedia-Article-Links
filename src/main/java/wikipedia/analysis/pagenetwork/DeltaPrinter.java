@@ -82,7 +82,7 @@ public final class DeltaPrinter {
             deltaElements.add(graphDelta.toJSON());
         }
         allDeltasJson.append(StringUtils.join(deltaElements, ITEM_SEPARATOR));
-        allDeltasJson.append("];");
+        allDeltasJson.append("]}");
         return allDeltasJson.toString();
 
     }
@@ -140,7 +140,7 @@ public final class DeltaPrinter {
         }
         completeGraphJson.append(StringUtils.join(allEdges, ITEM_SEPARATOR));
 
-        completeGraphJson.append("] }}");
+        completeGraphJson.append("] }");
         return completeGraphJson.toString();
     }
 
