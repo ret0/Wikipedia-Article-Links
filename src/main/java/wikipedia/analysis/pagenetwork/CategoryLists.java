@@ -64,8 +64,14 @@ public final class CategoryLists {
             "Category:2000s_music_groups",
             "Category:1990s_music_groups");
 
-    public static final List<List<String>> getAllCategories() {
-        return ImmutableList.of(ENGLISH_MUSIC, CLASSICAL_MUSIC, MUSIC_GROUPS);
-    }
+    public static final List<String> BORN_IN_THE_80IES = ImmutableList.of(
+            //"Category:1984_births",
+            "Category:1985_births",
+            "Category:1986_births"
+            );
+
+//    public static final List<List<String>> getAllCategories() {
+//        return ImmutableList.of(ENGLISH_MUSIC, CLASSICAL_MUSIC, MUSIC_GROUPS);
+//    }
 
 }
