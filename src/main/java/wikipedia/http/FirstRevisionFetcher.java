@@ -30,13 +30,14 @@ public final class FirstRevisionFetcher {
         final String url = getURL();
         LOG.info("Fetching URL: " + url);
         String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
-        LOG.info(xmlResponse);
+        //LOG.info(xmlResponse);
         Api revisionFromXML = XMLTransformer.getRevisionFromXML(xmlResponse);
         String timeStamp = revisionFromXML.getQuery().getPages().get(0).getRevisions().get(0).getTimestamp();
         return new DateTime(timeStamp);
     }
 
     private String getURL() {
+        //LOG.info("Pagetitle was: " + pageTitle);
         final String encodedPageName = HTTPUtil.urlEncode(pageTitle);
         return "http://" + lang +
         ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles=" + encodedPageName +

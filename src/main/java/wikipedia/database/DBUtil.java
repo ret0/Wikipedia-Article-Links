@@ -162,6 +162,11 @@ public final class DBUtil {
             int pageSearchResults = jdbcTemplate.queryForInt(
                     "SELECT COUNT(0) FROM pages WHERE page_id = ?", new Object[] {pageId });
             if (pageSearchResults == 0) {
+                try {
+                    Thread.sleep(400); // reduce serverload
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 storePageEntry(lang, pageId, pageTitle);
             }
 
