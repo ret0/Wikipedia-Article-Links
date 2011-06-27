@@ -28,8 +28,9 @@ public final class FirstRevisionFetcher {
 
     public DateTime getFirstRevisionDate() {
         final String url = getURL();
-        LOG.debug("Fetching URL: " + url);
+        LOG.info("Fetching URL: " + url);
         String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
+        LOG.info(xmlResponse);
         Api revisionFromXML = XMLTransformer.getRevisionFromXML(xmlResponse);
         String timeStamp = revisionFromXML.getQuery().getPages().get(0).getRevisions().get(0).getTimestamp();
         return new DateTime(timeStamp);
