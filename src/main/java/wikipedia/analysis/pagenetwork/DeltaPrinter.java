@@ -43,15 +43,25 @@ public final class DeltaPrinter {
     }
 
     public static void main(final String[] args) throws IOException {
+        //categories.addAll(CategoryLists.ENGLISH_MUSIC);
+        //categories.addAll(CategoryLists.CLASSICAL_MUSIC);
+        //categories.addAll(CategoryLists.MUSIC_GROUPS);
+        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.ENGLISH_MUSIC), "out/initialGraph_ENGLISH_MUSIC.js");
+        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.CLASSICAL_MUSIC), "out/initialGraph_CLASSICAL_MUSIC.js");
+        ArrayList<String> newArrayList = Lists.<String>newArrayList();
+        newArrayList.addAll(CategoryLists.CLASSICAL_MUSIC);
+        newArrayList.addAll(CategoryLists.ENGLISH_MUSIC);
+        newArrayList.addAll(CategoryLists.MUSIC_GROUPS);
+        generateFileForCombination(newArrayList, "out/initialGraph_CLASSICAL_MUSIC_ENGLISH_MUSIC_MUSIC_GROUPS.js");
+    }
+
+    private static void generateFileForCombination(final List<String> categories,
+                                                   final String outputFileName) throws IOException {
         List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(NUM_REVISIONS,
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
-        List<String> categories = Lists.newArrayList();
-        categories.addAll(CategoryLists.ENGLISH_MUSIC);
-        //categories.addAll(CategoryLists.CLASSICAL_MUSIC);
-        categories.addAll(CategoryLists.MUSIC_GROUPS);
         DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
-        FileUtils.write(new File("out/initialGraph.js"), completeJSONForPage);
+        FileUtils.write(new File(outputFileName), completeJSONForPage);
     }
 
     private String buildNetworksAndGenerateInfo() {
