@@ -6,7 +6,7 @@
 
     <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
         <property name="driverClassName" value="com.mysql.jdbc.Driver" />
-        <property name="url" value="jdbc:mysql://18.111.7.226:3306/page_link_revisions?characterEncoding=UTF-8" />
+        <property name="url" value="jdbc:mysql://localhost:3306/page_link_revisions?characterEncoding=UTF-8" />
         <property name="username" value="wikiCache" />
         <property name="password" value="cache" />
     </bean>
