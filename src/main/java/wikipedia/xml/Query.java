@@ -21,6 +21,17 @@ public final class Query {
     @ElementList(required = false)
     private List<CategoryMember> categorymembers;
 
+    @ElementList(required = false)
+    private List<Search> search;
+
+    public List<Search> getSearch() {
+        return search;
+    }
+
+    public void setSearch(final List<Search> search) {
+        this.search = search;
+    }
+
     public List<CategoryMember> getCategorymembers() {
         return categorymembers;
     }
