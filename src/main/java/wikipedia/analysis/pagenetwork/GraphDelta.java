@@ -55,7 +55,7 @@ public final class GraphDelta {
     /** Functor to print node string to json */
     private final class NodePrinter implements Function<String, String> {
         public String apply(final String input) {
-            return "{ \"nodeName\": \"" + input + "\" }";
+            return "{ \"nodeName\": \"" + input + "\"" + ", \"group\": 2}";
         }
     }
 
