@@ -8,6 +8,8 @@ import java.util.Set;
 
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateMidnight;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import util.MapSorter;
 import wikipedia.http.PageHistoryFetcher;
@@ -21,6 +23,8 @@ import com.google.common.collect.Sets;
 public final class RelatedResultsFetcher {
 
     private static final int NBR_WEEKS = 4;
+
+    private static final Logger LOG = LoggerFactory.getLogger(RelatedResultsFetcher.class.getName());
 
     private final String lang;
     private final String searchTerm;
@@ -98,8 +102,12 @@ public final class RelatedResultsFetcher {
         Map<Integer, String> idsAndPages = Maps.newHashMap();
 
         for (String pageTitle : allSeenNodes) {
-            int id = fetcher.getPageID(pageTitle);
-            idsAndPages.put(id, pageTitle);
+            try {
+                int id = fetcher.getPageID(pageTitle);
+                idsAndPages.put(id, pageTitle);
+            } catch (Exception e) {
+                LOG.info("Problem while getting: " + pageTitle);
+            }
         }
 
         new PageHistoryFetcher(idsAndPages, "en").fetchCompleteCategories();
