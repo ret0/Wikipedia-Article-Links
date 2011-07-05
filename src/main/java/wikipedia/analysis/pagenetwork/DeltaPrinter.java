@@ -64,7 +64,7 @@ public final class DeltaPrinter {
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
         DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
-        FileUtils.write(new File(outputFileName), completeJSONForPage);
+        FileUtils.write(new File(outputFileName), completeJSONForPage, "UTF-8");
     }
 
     private String buildNetworksAndGenerateInfo() {
