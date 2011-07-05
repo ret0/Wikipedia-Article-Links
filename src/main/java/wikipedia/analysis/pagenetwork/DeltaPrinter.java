@@ -11,8 +11,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import wikipedia.database.DBUtil;
 import wikipedia.http.PageHistoryFetcher;
@@ -29,8 +27,6 @@ public final class DeltaPrinter {
 
     private static final String ITEM_SEPARATOR = ", \n";
 
-    private static final Logger LOG = LoggerFactory.getLogger(DeltaPrinter.class.getName());
-
     private static final int NUM_REVISIONS = 30;
     private final List<String> categories;
     private final List<DateTime> allTimeFrames;
@@ -43,22 +39,23 @@ public final class DeltaPrinter {
     }
 
     public static void main(final String[] args) throws IOException {
-        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.ENGLISH_MUSIC),
-                "out/initialGraph_ENGLISH_MUSIC.js");
-
-        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.CLASSICAL_MUSIC),
-                "out/initialGraph_CLASSICAL_MUSIC.js");
-
-        ArrayList<String> newArrayList = Lists.<String>newArrayList();
-        newArrayList.addAll(CategoryLists.CLASSICAL_MUSIC);
-        newArrayList.addAll(CategoryLists.ENGLISH_MUSIC);
-        newArrayList.addAll(CategoryLists.MUSIC_GROUPS);
-        generateFileForCombination(newArrayList, "out/initialGraph_CLASSICAL_MUSIC_ENGLISH_MUSIC_MUSIC_GROUPS.js");
-
-        ArrayList<String> newArrayList2 = Lists.<String>newArrayList();
-        newArrayList2.addAll(CategoryLists.ENGLISH_MUSIC);
-        newArrayList2.addAll(CategoryLists.MUSIC_GROUPS);
-        generateFileForCombination(newArrayList2, "out/initialGraph_ENGLISH_MUSIC_MUSIC_GROUPS.js");
+//        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.ENGLISH_MUSIC),
+//                "out/initialGraph_ENGLISH_MUSIC.js");
+//
+//        generateFileForCombination(Lists.<String>newArrayList(CategoryLists.CLASSICAL_MUSIC),
+//                "out/initialGraph_CLASSICAL_MUSIC.js");
+//
+//        ArrayList<String> newArrayList = Lists.<String>newArrayList();
+//        newArrayList.addAll(CategoryLists.CLASSICAL_MUSIC);
+//        newArrayList.addAll(CategoryLists.ENGLISH_MUSIC);
+//        newArrayList.addAll(CategoryLists.MUSIC_GROUPS);
+//        generateFileForCombination(newArrayList, "out/initialGraph_CLASSICAL_MUSIC_ENGLISH_MUSIC_MUSIC_GROUPS.js");
+//
+//        ArrayList<String> newArrayList2 = Lists.<String>newArrayList();
+//        newArrayList2.addAll(CategoryLists.ENGLISH_MUSIC);
+//        newArrayList2.addAll(CategoryLists.MUSIC_GROUPS);
+//        generateFileForCombination(newArrayList2, "out/initialGraph_ENGLISH_MUSIC_MUSIC_GROUPS.js");
+        generateFileForCombination(CategoryLists.BORN_IN_THE_80IES, "out/initialGraph_BORN_IN_THE_80IES.js");
     }
 
     private static void generateFileForCombination(final List<String> categories,
