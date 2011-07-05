@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import util.MapSorter;
 import wikipedia.database.DBUtil;
-import wikipedia.http.CategoryMemberFetcher;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
 
@@ -43,14 +42,12 @@ public final class NetworkBuilder {
 
     private final DateTime dateTime;
 
-
-    public NetworkBuilder(final List<String> categories, final String lang,
+    public NetworkBuilder(final Map<Integer, String> allPagesInNetwork, final String lang,
             final DateMidnight dateMidnight, final DBUtil database) {
         this.dateTime = dateMidnight.toDateTime();
         this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         this.database = database;
-        allPagesInNetwork = new CategoryMemberFetcher(categories, lang, database)
-                .getAllPagesInAllCategories();
+        this.allPagesInNetwork = allPagesInNetwork;
     }
 
     public TimeFrameGraph getGraphAtDate(final List<String> nodeDebug) {

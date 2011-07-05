@@ -71,7 +71,7 @@ public final class CategoryMemberFetcher {
     }
 
     private Map<Integer, String> downloadCategoryMembers(final String categoryName) {
-        Map<Integer, String> allPageTitles = Maps.newLinkedHashMap();
+        Map<Integer, String> allPages = Maps.newLinkedHashMap();
         Api revisionResult = null;
         String queryContinue = "";
         while (true) {
@@ -80,7 +80,7 @@ public final class CategoryMemberFetcher {
             final String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
             revisionResult = XMLTransformer.getRevisionFromXML(xmlResponse);
             for (CategoryMember member : revisionResult.getQuery().getCategorymembers()) {
-                allPageTitles.put(member.getPageid(), member.getTitle());
+                allPages.put(member.getPageid(), member.getTitle());
             }
             if (revisionResult.getQueryContinue() == null) {
                 break;
@@ -89,7 +89,7 @@ public final class CategoryMemberFetcher {
                         .getCmcontinue();
             }
         }
-        return allPageTitles;
+        return allPages;
     }
 
     private String getURL(final String categoryName,

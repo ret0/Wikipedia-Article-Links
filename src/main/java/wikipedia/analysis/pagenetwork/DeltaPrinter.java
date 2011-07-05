@@ -13,6 +13,7 @@ import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 
 import wikipedia.database.DBUtil;
+import wikipedia.http.CategoryMemberFetcher;
 import wikipedia.http.PageHistoryFetcher;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -28,12 +29,12 @@ public final class DeltaPrinter {
     private static final String ITEM_SEPARATOR = ", \n";
 
     private static final int NUM_REVISIONS = 30;
-    private final List<String> categories;
+    private final Map<Integer, String> allPages;
     private final List<DateTime> allTimeFrames;
     private final String lang;
 
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames, final String lang) {
-        this.categories = categories;
+        this.allPages =  new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories();
         this.allTimeFrames = allTimeFrames;
         this.lang = lang;
     }
@@ -74,7 +75,7 @@ public final class DeltaPrinter {
         for (DateTime dateTime : allTimeFramesOldToNew) {
             DateMidnight dateMidnight = dateTime.toDateMidnight();
             List<String> nodeDebug = Lists.newArrayList();
-            dateGraphMap.add(new NetworkBuilder(categories, lang, dateMidnight, database)
+            dateGraphMap.add(new NetworkBuilder(allPages, lang, dateMidnight, database)
                     .getGraphAtDate(nodeDebug));
         }
         return generateTimeFrameInformation(dateGraphMap);

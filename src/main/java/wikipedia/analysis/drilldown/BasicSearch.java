@@ -3,8 +3,6 @@ package wikipedia.analysis.drilldown;
 import java.util.Collection;
 
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
 import wikipedia.http.WikiAPIClient;
@@ -15,11 +13,10 @@ import wikipedia.xml.XMLTransformer;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 
-public class BasicSearch {
+public final class BasicSearch {
 
     private static final int NUMBER_OF_RESULTS = 20;
 
-    private static final Logger LOG = LoggerFactory.getLogger(BasicSearch.class.getName());
     private final WikiAPIClient wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
 
     private final String searchTerm;
@@ -30,11 +27,7 @@ public class BasicSearch {
         this.searchTerm = searchTerm;
     }
 
-    public static void main(final String[] args) {
-        new BasicSearch("en", "Bill Clinton").executeSearch();
-    }
-
-    private Collection<String> executeSearch() {
+    public Collection<String> executeSearch() {
         final String xmlResponse = wikiAPIClient.executeHTTPRequest(getURL());
         final Api revisionResult = XMLTransformer.getRevisionFromXML(xmlResponse);
         return Collections2.transform(revisionResult.getQuery().getSearch(), new Function<Search, String>() {

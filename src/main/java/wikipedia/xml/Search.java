@@ -2,7 +2,16 @@ package wikipedia.xml;
 
 import org.simpleframework.xml.Attribute;
 
-public class Search {
+/**
+ * Wikipedia API Search Results
+ */
+public final class Search {
+
+    @Attribute
+    private int ns;
+
+    @Attribute
+    private String title;
 
     public int getNs() {
         return ns;
@@ -12,10 +21,6 @@ public class Search {
         this.ns = ns;
     }
 
-
-    @Attribute
-    private int ns;
-
     public String getTitle() {
         return title;
     }
@@ -23,10 +28,5 @@ public class Search {
     public void setTitle(final String title) {
         this.title = title;
     }
-
-
-    @Attribute
-    private String title;
-
 
 }

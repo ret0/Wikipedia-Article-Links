@@ -42,9 +42,17 @@ public final class PageHistoryFetcher {
             new ThreadSafeClientConnManager());
 
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
+    private final Map<Integer, String> allPagesInAllCategories;
+    private final String lang;
 
-    public PageHistoryFetcher() {
+    public PageHistoryFetcher(final List<String> categories, final String lang) {
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), lang);
+    }
+
+    public PageHistoryFetcher(final Map<Integer, String> pages, final String lang) {
+        this.lang = lang;
         allRelevantTimeStamps = getAllDatesForHistory(MAX_MONTHS, MOST_RECENT_DATE.toDateTime());
+        allPagesInAllCategories = pages;
     }
 
     /**
@@ -62,7 +70,7 @@ public final class PageHistoryFetcher {
         return allDatesToFetch;
     }
 
-    public void fetchAllRecords(final int pageId,
+    protected void fetchAllRecords(final int pageId,
                                 final String pageTitle,
                                 final String lang) {
         // get oldest revision of article, if it didnt exist yet, do not execute
@@ -140,13 +148,10 @@ public final class PageHistoryFetcher {
      *
      */
     public static void main(final String[] args) {
-        final String lang = "en";
-        new PageHistoryFetcher().fetchCompleteCategories(lang);
+        new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en").fetchCompleteCategories();
     }
 
-    private void fetchCompleteCategories(final String lang) {
-        final Map<Integer, String> allPagesInAllCategories = new CategoryMemberFetcher(
-                CategoryLists.BORN_IN_THE_80IES, lang, dataBaseUtil).getAllPagesInAllCategories();
+    public void fetchCompleteCategories() {
         LOG.info("Total Number of Tasks: " + allPagesInAllCategories.size());
         int counter = 1;
         try {

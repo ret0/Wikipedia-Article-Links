@@ -36,6 +36,7 @@ import com.google.common.collect.Maps;
  */
 public final class DBUtil {
 
+    private static final int SLEEP_BETWEEN_REQUESTS = 400;
     private static final int MAX_TITLE_LENGTH = 256;
     public static final String MYSQL_DATETIME = "YYYY-MM-dd HH:mm:ss";
     public static final DateTimeFormatter MYSQL_DATETIME_FORMATTER = DateTimeFormat
@@ -163,7 +164,7 @@ public final class DBUtil {
                     "SELECT COUNT(0) FROM pages WHERE page_id = ?", new Object[] {pageId });
             if (pageSearchResults == 0) {
                 try {
-                    Thread.sleep(400); // reduce serverload
+                    Thread.sleep(SLEEP_BETWEEN_REQUESTS); // reduce serverload
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
