@@ -63,7 +63,7 @@ public final class RelatedResultsFetcher {
 
     public static void main(final String[] args) throws IOException {
         final String lang = "en";
-        RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Justin Bieber", lang);
+        RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Dominique Strauss-Kahn", lang);
         WikiAPIClient wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
         Set<String> allSeenNodes = Sets.newHashSet();
 
@@ -107,7 +107,7 @@ public final class RelatedResultsFetcher {
                 PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
         DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
-        FileUtils.write(new File("out/search_jb.json"), completeJSONForPage, "UTF-8");
+        FileUtils.write(new File("out/search_dsk.json"), completeJSONForPage, "UTF-8");
     }
 
     private Map<Integer, String> prepareNodesForNetwork(final Set<String> allSeenNodes) {
@@ -117,6 +117,7 @@ public final class RelatedResultsFetcher {
                 int id = database.getPageIDFromCache(pageTitle, lang);
                 idsAndPages.put(id, pageTitle);
             } catch (Exception e) {
+                e.printStackTrace();
                 LOG.info("Problem while getting: " + pageTitle);
             }
         }

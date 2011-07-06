@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,12 +13,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.graphstream.algorithm.Dijkstra;
 import org.graphstream.graph.implementations.DefaultGraph;
-import org.graphstream.graph.implementations.SingleNode;
+import org.graphstream.graph.implementations.MultiGraph;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.MapSorter;
 import wikipedia.database.DBUtil;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -71,9 +73,10 @@ public final class NetworkBuilder {
         }
 
         // create graph using gs
-        DefaultGraph graph = new DefaultGraph("g1", false, true);
+        DefaultGraph graph = new MultiGraph("g1", false, true);
+        Random r = new Random();
         for (GraphEdge edge : allLinksInNetwork) {
-            graph.addEdge("", edge.getFrom(), edge.getTo());
+            graph.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo());
         }
 
         Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Justin Bieber");
@@ -82,24 +85,28 @@ public final class NetworkBuilder {
         LOG.info("BEFORE COMPUTE");
         d.compute();
 
+        //indeg
         int nodeIndex = 0;
+        Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
+        for (Entry<String, Float> pageIndegEntry : allPagesOrderedByIndeg.entrySet()) {
+            if (nodeIndex >= 30) {
+                break;
+            }
+            nameIndexMap.put(pageIndegEntry.getKey(), nodeIndex++);
+        }
+
+        //direct neighbors
         for (String pageName : pageIndegMap.keySet()) {
-            double shortestPathLength = d.getShortestPathLength(new SingleNode(graph, pageName));
-            LOG.info("calucladed shortest path: " + shortestPathLength);
-            if (shortestPathLength <= 3) {
+            double shortestPathLength = d.getShortestPathLength(graph.getNode(pageName));
+            //LOG.info("calucladed shortest path: " + shortestPathLength);
+            if ((shortestPathLength <= 1 && allPagesOrderedByIndeg.get(pageName) >= 1.5 && !nameIndexMap.containsKey(pageName)) || shortestPathLength < 1) {
+                LOG.info("adding close neighbor: " + pageName + "magic Number: " + allPagesOrderedByIndeg.get(pageName));
                 nameIndexMap.put(pageName, nodeIndex++);
             }
         }
 
 
-        /*int nodeIndex = 0;
-        Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
-        for (Entry<String, Float> pageIndegEntry : allPagesOrderedByIndeg.entrySet()) {
-            if (nodeIndex >= 50) {
-                break;
-            }
-            nameIndexMap.put(pageIndegEntry.getKey(), nodeIndex++);
-        }*/
+
 
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
