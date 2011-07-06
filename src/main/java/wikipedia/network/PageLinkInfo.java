@@ -91,6 +91,7 @@ public final class PageLinkInfo {
                 "cdo:",
                 "cs:",
                 "crh:",
+                "ckb:",
                 "cy:",
                 "da:",
                 "de:",

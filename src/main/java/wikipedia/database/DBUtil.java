@@ -248,7 +248,9 @@ public final class DBUtil {
         } catch (EmptyResultDataAccessException e) {
             NumberOfRecentEditsFetcher fetcher = new NumberOfRecentEditsFetcher(lang);
             int pageID = fetcher.getPageID(pageTitle);
-            jdbcTemplate.update("INSERT INTO page_id_cache VALUES (?, ?);", new Object[] {pageID, pageTitle});
+            if(pageID != 0) {
+                jdbcTemplate.update("INSERT INTO page_id_cache VALUES (?, ?);", new Object[] {pageID, pageTitle});
+            }
             return pageID;
         }
     }

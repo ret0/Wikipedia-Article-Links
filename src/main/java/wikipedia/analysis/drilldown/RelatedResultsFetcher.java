@@ -115,7 +115,9 @@ public final class RelatedResultsFetcher {
         for (String pageTitle : allSeenNodes) {
             try {
                 int id = database.getPageIDFromCache(pageTitle, lang);
-                idsAndPages.put(id, pageTitle);
+                if (id != 0) {
+                    idsAndPages.put(id, pageTitle);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 LOG.info("Problem while getting: " + pageTitle);

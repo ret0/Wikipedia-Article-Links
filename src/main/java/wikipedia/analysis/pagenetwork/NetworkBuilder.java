@@ -79,7 +79,7 @@ public final class NetworkBuilder {
             graph.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo());
         }
 
-        Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Justin Bieber");
+        Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Dominique Strauss-Kahn");
         LOG.info("BEFORE INIT");
         d.init(graph);
         LOG.info("BEFORE COMPUTE");
