@@ -22,6 +22,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import wikipedia.analysis.drilldown.NumberOfRecentEditsFetcher;
 import wikipedia.http.FirstRevisionFetcher;
 import wikipedia.http.WikiAPIClient;
 import wikipedia.network.PageLinkInfo;
@@ -238,6 +239,18 @@ public final class DBUtil {
                     (String) resultRow.get("page_title"));
         }
         return categoryMembers;
+    }
+
+    public int getPageIDFromCache(final String pageTitle, final String lang) {
+        try {
+            int pageId = jdbcTemplate.queryForInt("SELECT page_id FROM page_id_cache WHERE page_title = ?", new Object[] {pageTitle});
+            return pageId;
+        } catch (EmptyResultDataAccessException e) {
+            NumberOfRecentEditsFetcher fetcher = new NumberOfRecentEditsFetcher(lang);
+            int pageID = fetcher.getPageID(pageTitle);
+            jdbcTemplate.update("INSERT INTO page_id_cache VALUES (?, ?);", new Object[] {pageID, pageTitle});
+            return pageID;
+        }
     }
 
 }

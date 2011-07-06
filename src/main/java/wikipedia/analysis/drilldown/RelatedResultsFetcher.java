@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.MapSorter;
+import wikipedia.database.DBUtil;
 import wikipedia.http.PageHistoryFetcher;
 import wikipedia.http.PageLinkInfoFetcher;
 import wikipedia.http.WikiAPIClient;
@@ -29,6 +30,7 @@ public final class RelatedResultsFetcher {
     private final String lang;
     private final String searchTerm;
     private final NumberOfRecentEditsFetcher numberOfRecentEditsFetcher;
+    private final DBUtil database = new DBUtil();
 
     public RelatedResultsFetcher(final String searchTerm, final String lang) {
         this.searchTerm = searchTerm;
@@ -94,16 +96,14 @@ public final class RelatedResultsFetcher {
         System.out.println(allSeenNodes.size());
         System.out.println(allSeenNodes);
 
-        prepareNodesForNetwork(allSeenNodes);
+        fetcher.prepareNodesForNetwork(allSeenNodes);
     }
 
-    private static void prepareNodesForNetwork(final Set<String> allSeenNodes) {
-        NumberOfRecentEditsFetcher fetcher = new NumberOfRecentEditsFetcher("en"); //FIX ME NON STATIC!
+    private void prepareNodesForNetwork(final Set<String> allSeenNodes) {
         Map<Integer, String> idsAndPages = Maps.newHashMap();
-
         for (String pageTitle : allSeenNodes) {
             try {
-                int id = fetcher.getPageID(pageTitle);
+                int id = database.getPageIDFromCache(pageTitle, lang);
                 idsAndPages.put(id, pageTitle);
             } catch (Exception e) {
                 LOG.info("Problem while getting: " + pageTitle);
