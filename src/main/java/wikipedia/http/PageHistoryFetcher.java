@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
  */
 public final class PageHistoryFetcher {
 
-    public static final int MAX_MONTHS = 1; // FIXME
     public static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
 
     private static final int THREAD_SLEEP_MSEC = 1200;
@@ -45,13 +44,13 @@ public final class PageHistoryFetcher {
     private final Map<Integer, String> allPagesInAllCategories;
     private final String lang;
 
-    public PageHistoryFetcher(final List<String> categories, final String lang) {
-        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), lang);
+    public PageHistoryFetcher(final List<String> categories, final String lang, final int max_months) {
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), lang, max_months);
     }
 
-    public PageHistoryFetcher(final Map<Integer, String> pages, final String lang) {
+    public PageHistoryFetcher(final Map<Integer, String> pages, final String lang, final int max_months) {
         this.lang = lang;
-        allRelevantTimeStamps = getAllDatesForHistory(MAX_MONTHS, MOST_RECENT_DATE.toDateTime());
+        allRelevantTimeStamps = getAllDatesForHistory(max_months, MOST_RECENT_DATE.toDateTime());
         allPagesInAllCategories = pages;
     }
 
@@ -148,7 +147,7 @@ public final class PageHistoryFetcher {
      *
      */
     public static void main(final String[] args) {
-        new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en").fetchCompleteCategories();
+        new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en", 2).fetchCompleteCategories();
     }
 
     public void fetchCompleteCategories() {

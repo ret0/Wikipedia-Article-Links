@@ -1,17 +1,22 @@
 package wikipedia.analysis.drilldown;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.MapSorter;
+import wikipedia.analysis.pagenetwork.DeltaPrinter;
 import wikipedia.database.DBUtil;
 import wikipedia.http.PageHistoryFetcher;
 import wikipedia.http.PageLinkInfoFetcher;
@@ -56,7 +61,7 @@ public final class RelatedResultsFetcher {
         return activityResults;
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         final String lang = "en";
         RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Justin Bieber", lang);
         WikiAPIClient wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
@@ -96,10 +101,16 @@ public final class RelatedResultsFetcher {
         System.out.println(allSeenNodes.size());
         System.out.println(allSeenNodes);
 
-        fetcher.prepareNodesForNetwork(allSeenNodes);
+        Map<Integer, String> allPages = fetcher.prepareNodesForNetwork(allSeenNodes);
+
+        List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(1,
+                PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
+        DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames, "en");
+        String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
+        FileUtils.write(new File("out/search_jb.json"), completeJSONForPage, "UTF-8");
     }
 
-    private void prepareNodesForNetwork(final Set<String> allSeenNodes) {
+    private Map<Integer, String> prepareNodesForNetwork(final Set<String> allSeenNodes) {
         Map<Integer, String> idsAndPages = Maps.newHashMap();
         for (String pageTitle : allSeenNodes) {
             try {
@@ -110,7 +121,8 @@ public final class RelatedResultsFetcher {
             }
         }
 
-        new PageHistoryFetcher(idsAndPages, "en").fetchCompleteCategories();
+        new PageHistoryFetcher(idsAndPages, "en", 1).fetchCompleteCategories();
+        return idsAndPages;
     }
 
     private static Map<String, Integer> getTopEntries(final int nbrResults,

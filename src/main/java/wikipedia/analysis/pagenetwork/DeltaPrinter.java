@@ -34,7 +34,12 @@ public final class DeltaPrinter {
     private final String lang;
 
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames, final String lang) {
-        this.allPages =  new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories();
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(),
+                allTimeFrames, lang);
+    }
+
+    public DeltaPrinter(final Map<Integer, String> allPages, final List<DateTime> allTimeFrames, final String lang) {
+        this.allPages =  allPages;
         this.allTimeFrames = allTimeFrames;
         this.lang = lang;
     }
@@ -68,7 +73,7 @@ public final class DeltaPrinter {
         FileUtils.write(new File(outputFileName), completeJSONForPage, "UTF-8");
     }
 
-    private String buildNetworksAndGenerateInfo() {
+    public String buildNetworksAndGenerateInfo() {
         List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
         List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
         DBUtil database = new DBUtil();
