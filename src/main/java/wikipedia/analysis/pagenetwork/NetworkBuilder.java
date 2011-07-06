@@ -10,12 +10,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.graphstream.algorithm.Dijkstra;
+import org.graphstream.graph.implementations.DefaultGraph;
+import org.graphstream.graph.implementations.SingleNode;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import util.MapSorter;
 import wikipedia.database.DBUtil;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -68,14 +70,36 @@ public final class NetworkBuilder {
             pageIndegMap.put(targetPage, magicNumber);
         }
 
+        // create graph using gs
+        DefaultGraph graph = new DefaultGraph("g1", false, true);
+        for (GraphEdge edge : allLinksInNetwork) {
+            graph.addEdge("", edge.getFrom(), edge.getTo());
+        }
+
+        Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Justin Bieber");
+        LOG.info("BEFORE INIT");
+        d.init(graph);
+        LOG.info("BEFORE COMPUTE");
+        d.compute();
+
         int nodeIndex = 0;
+        for (String pageName : pageIndegMap.keySet()) {
+            double shortestPathLength = d.getShortestPathLength(new SingleNode(graph, pageName));
+            LOG.info("calucladed shortest path: " + shortestPathLength);
+            if (shortestPathLength <= 3) {
+                nameIndexMap.put(pageName, nodeIndex++);
+            }
+        }
+
+
+        /*int nodeIndex = 0;
         Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
         for (Entry<String, Float> pageIndegEntry : allPagesOrderedByIndeg.entrySet()) {
             if (nodeIndex >= 50) {
                 break;
             }
             nameIndexMap.put(pageIndegEntry.getKey(), nodeIndex++);
-        }
+        }*/
 
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
