@@ -28,11 +28,12 @@ public final class NumberOfRecentEditsFetcher {
 
     public int getNumberOfEditsInLastWeeks(final int numberOfWeeks,
                                            final String pageTitle) {
-        final List<Rev> revisions = downloadPages(numberOfWeeks, pageTitle).getRevisions();
-        if (revisions != null) {
+        try {
+            final List<Rev> revisions = downloadPages(numberOfWeeks, pageTitle).getRevisions();
             return revisions.size();
+        } catch (Exception e) {
+            return 0;
         }
-        return 0;
     }
 
     private Page downloadPages(final int numberOfWeeks,
