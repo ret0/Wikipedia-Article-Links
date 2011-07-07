@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.graphstream.algorithm.Dijkstra;
+import org.graphstream.algorithm.BetweennessCentrality;
 import org.graphstream.graph.implementations.DefaultGraph;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.joda.time.DateMidnight;
@@ -19,7 +19,6 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import util.MapSorter;
 import wikipedia.database.DBUtil;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -79,7 +78,7 @@ public final class NetworkBuilder {
             graph.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo());
         }
 
-        Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Dominique Strauss-Kahn");
+        /*Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Dominique Strauss-Kahn");
         LOG.info("BEFORE INIT");
         d.init(graph);
         LOG.info("BEFORE COMPUTE");
@@ -103,10 +102,21 @@ public final class NetworkBuilder {
                 LOG.info("adding close neighbor: " + pageName + "magic Number: " + allPagesOrderedByIndeg.get(pageName));
                 nameIndexMap.put(pageName, nodeIndex++);
             }
+        }*/
+
+        BetweennessCentrality bc = new BetweennessCentrality();
+        bc.init(graph);
+        bc.registerProgressIndicator(new BetweennessCentrality.Progress() {
+            @Override
+            public void progress(final float percent) {
+                System.out.println(percent);
+            }
+        });
+        bc.compute();
+        for (String pageName : pageIndegMap.keySet()) {
+            double centr = bc.centrality(graph.getNode(pageName));
+            LOG.info(pageName + ";" + centr);
         }
-
-
-
 
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
