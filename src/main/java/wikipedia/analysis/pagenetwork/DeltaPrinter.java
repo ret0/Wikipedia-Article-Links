@@ -28,20 +28,16 @@ public final class DeltaPrinter {
 
     private static final String ITEM_SEPARATOR = ", \n";
 
-    private static final int NUM_REVISIONS = 30;
     private final Map<Integer, String> allPages;
     private final List<DateTime> allTimeFrames;
-    private final String lang;
 
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames, final String lang) {
-        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(),
-                allTimeFrames, lang);
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), allTimeFrames);
     }
 
-    public DeltaPrinter(final Map<Integer, String> allPages, final List<DateTime> allTimeFrames, final String lang) {
+    public DeltaPrinter(final Map<Integer, String> allPages, final List<DateTime> allTimeFrames) {
         this.allPages =  allPages;
         this.allTimeFrames = allTimeFrames;
-        this.lang = lang;
     }
 
     public static void main(final String[] args) throws IOException {
@@ -66,22 +62,29 @@ public final class DeltaPrinter {
 
     private static void generateFileForCombination(final List<String> categories,
                                                    final String outputFileName) throws IOException {
-        List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(NUM_REVISIONS,
-                PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
+        List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(36,
+                new DateMidnight(2011, 7, 1).toDateTime());
         DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
-        String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
+        String completeJSONForPage = dp.buildNetworksAndGenerateInfoXXX();
         FileUtils.write(new File(outputFileName), completeJSONForPage, "UTF-8");
     }
 
-    public String buildNetworksAndGenerateInfo() {
+    public String buildNetworksAndGenerateInfoXXX() {
         List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
         List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
         DBUtil database = new DBUtil();
         for (DateTime dateTime : allTimeFramesOldToNew) {
-            DateMidnight dateMidnight = dateTime.toDateMidnight();
-            List<String> nodeDebug = Lists.newArrayList();
-            dateGraphMap.add(new NetworkBuilder(allPages, lang, dateMidnight, database)
-                    .getGraphAtDate(nodeDebug));
+            dateGraphMap.add(new SimpleIndegreeNetworkBuilder(allPages, database).getGraphAtDate(dateTime));
+        }
+        return generateTimeFrameInformation(dateGraphMap);
+    }
+
+    public String buildNetworksAndGenerateInfo(final String searchTerm) {
+        List<TimeFrameGraph> dateGraphMap = Lists.newArrayList();
+        List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
+        DBUtil database = new DBUtil();
+        for (DateTime dateTime : allTimeFramesOldToNew) {
+            dateGraphMap.add(new NetworkBuilder(allPages, database, searchTerm).getGraphAtDate(dateTime));
         }
         return generateTimeFrameInformation(dateGraphMap);
     }

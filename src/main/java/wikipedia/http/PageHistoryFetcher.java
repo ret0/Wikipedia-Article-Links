@@ -26,8 +26,6 @@ import com.google.common.collect.Lists;
  */
 public final class PageHistoryFetcher {
 
-    public static final DateMidnight MOST_RECENT_DATE = new DateMidnight(2011, 6, 1);
-
     private static final int THREAD_SLEEP_MSEC = 1200;
     private static final int THREADPOOL_TERMINATION_WAIT_MINUTES = 1;
     private static final int NUM_THREADS = 8;
@@ -44,13 +42,18 @@ public final class PageHistoryFetcher {
     private final Map<Integer, String> allPagesInAllCategories;
     private final String lang;
 
-    public PageHistoryFetcher(final List<String> categories, final String lang, final int max_months) {
-        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), lang, max_months);
+    public PageHistoryFetcher(final List<String> categories,
+                              final String lang,
+                              final List<DateTime> allRelevantTimeStamps) {
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(),
+                lang, allRelevantTimeStamps);
     }
 
-    public PageHistoryFetcher(final Map<Integer, String> pages, final String lang, final int max_months) {
+    public PageHistoryFetcher(final Map<Integer, String> pages,
+                              final String lang,
+                              final List<DateTime> allRelevantTimeStamps) {
         this.lang = lang;
-        allRelevantTimeStamps = getAllDatesForHistory(max_months, MOST_RECENT_DATE.toDateTime());
+        this.allRelevantTimeStamps = allRelevantTimeStamps;
         allPagesInAllCategories = pages;
     }
 
@@ -70,8 +73,7 @@ public final class PageHistoryFetcher {
     }
 
     protected void fetchAllRecords(final int pageId,
-                                final String pageTitle,
-                                final String lang) {
+                                   final String pageTitle) {
         // get oldest revision of article, if it didnt exist yet, do not execute
         // http request!
         String storedCreationDate = dataBaseUtil.getFirstRevisionDate(pageId);
@@ -92,14 +94,13 @@ public final class PageHistoryFetcher {
 
         final WikiAPIClient wikiAPIClient = new WikiAPIClient(httpClient);
         for (DateTime dateToFetch : allRelevantTimeStamps) {
-            downloadLinkInfoIfNecessary(pageId, pageTitle, lang, firstRevisionDate, wikiAPIClient,
+            downloadLinkInfoIfNecessary(pageId, pageTitle, firstRevisionDate, wikiAPIClient,
                     dateToFetch);
         }
     }
 
     private void downloadLinkInfoIfNecessary(final int pageId,
                                              final String pageTitle,
-                                             final String lang,
                                              final DateTime firstRevisionDate,
                                              final WikiAPIClient wikiAPIClient,
                                              final DateTime dateToFetch) {
@@ -126,7 +127,6 @@ public final class PageHistoryFetcher {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -147,7 +147,9 @@ public final class PageHistoryFetcher {
      *
      */
     public static void main(final String[] args) {
-        new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en", 2).fetchCompleteCategories();
+        final DateTime mostRecent = new DateMidnight(2011, 7, 1).toDateTime();
+        List<DateTime> allDatesForHistory = getAllDatesForHistory(2, mostRecent);
+        new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en", allDatesForHistory).fetchCompleteCategories();
     }
 
     public void fetchCompleteCategories() {
@@ -155,7 +157,7 @@ public final class PageHistoryFetcher {
         int counter = 1;
         try {
             for (final Entry<Integer, String> pageEntry : allPagesInAllCategories.entrySet()) {
-                threadPool.execute(new ExecutorTask(this, lang, pageEntry, counter++));
+                threadPool.execute(new ExecutorTask(this, pageEntry, counter++));
             }
         } finally {
             shutdownThreadPool();
@@ -169,14 +171,13 @@ public final class PageHistoryFetcher {
     private static final class ExecutorTask implements Runnable {
         private static final int MODULO_LOG = 100;
         private final PageHistoryFetcher pageHistoryFetcher;
-        private final String lang;
         private final Entry<Integer, String> pageEntry;
         private final int taskCounter;
 
-        private ExecutorTask(final PageHistoryFetcher pageHistoryFetcher, final String lang,
-                final Entry<Integer, String> pageEntry, final int taskCounter) {
+        private ExecutorTask(final PageHistoryFetcher pageHistoryFetcher,
+                             final Entry<Integer, String> pageEntry,
+                             final int taskCounter) {
             this.pageHistoryFetcher = pageHistoryFetcher;
-            this.lang = lang;
             this.pageEntry = pageEntry;
             this.taskCounter = taskCounter;
         }
@@ -187,7 +188,7 @@ public final class PageHistoryFetcher {
                 LOG.info("Starting Thread for Page: " + pageEntry.getValue() + " (Task Number: "
                         + taskCounter + ")");
             }
-            pageHistoryFetcher.fetchAllRecords(pageEntry.getKey(), pageEntry.getValue(), lang);
+            pageHistoryFetcher.fetchAllRecords(pageEntry.getKey(), pageEntry.getValue());
         }
     }
 

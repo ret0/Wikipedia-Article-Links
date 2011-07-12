@@ -9,12 +9,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.Const;
 import util.MapSorter;
 import wikipedia.analysis.pagenetwork.DeltaPrinter;
 import wikipedia.database.DBUtil;
@@ -26,7 +28,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+
 public final class RelatedResultsFetcher {
+
+    private static final int MAX_SEARCHRESULTS = 12;
 
     private static final int NBR_WEEKS = 4;
 
@@ -34,85 +39,67 @@ public final class RelatedResultsFetcher {
 
     private final String lang;
     private final String searchTerm;
-    private final NumberOfRecentEditsFetcher numberOfRecentEditsFetcher;
     private final DBUtil database = new DBUtil();
 
-    public RelatedResultsFetcher(final String searchTerm, final String lang) {
+    private final WikiAPIClient wikiAPIClient;
+
+    private final List<DateTime> allTimeFrames;
+    private final DateTime mostRecentDate;
+
+    public RelatedResultsFetcher(final String searchTerm, final String lang, final int numberOfWeeksBack) {
         this.searchTerm = searchTerm;
         this.lang = lang;
-        numberOfRecentEditsFetcher = new NumberOfRecentEditsFetcher(lang);
+        wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
+        mostRecentDate = new DateMidnight(2011, 6, 1).toDateTime();
+        allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(numberOfWeeksBack, mostRecentDate);
     }
 
-    public Map<String, Integer> getActivityMap() {
-        return getActivityMap(new BasicSearch(lang, searchTerm).executeSearch());
-    }
-
-    public Map<String, Integer> getActivityMap(final Collection<String> pages) {
+    private Map<String, Integer> getActivityMap(final int topResults) {
+        final Collection<String> searchResults = new BasicSearch(lang, searchTerm).executeSearch();
         Map<String, Integer> activityResults = Maps.newHashMap();
-        int counter = 1;
-        System.out.println("------------------------------------------------");
-        System.out.println("NEW MAP");
-        System.out.println("------------------------------------------------");
-        for (String pageTitle : pages) {
-            System.out.println(counter++);
+        final NumberOfRecentEditsFetcher numberOfRecentEditsFetcher = new NumberOfRecentEditsFetcher(lang);
+        for (String pageTitle : searchResults) {
             int nbrEdits = numberOfRecentEditsFetcher.getNumberOfEditsInLastWeeks(NBR_WEEKS, pageTitle);
             activityResults.put(pageTitle, nbrEdits);
         }
-        return activityResults;
+        return getTopEntries(topResults, activityResults);
     }
 
     public static void main(final String[] args) throws IOException {
-        final String lang = "en";
-        RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Dominique Strauss-Kahn", lang);
-        WikiAPIClient wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
+        final int numberOfWeeksBack = 1;
+        RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Justin Biber", "en", numberOfWeeksBack);
+        fetcher.buildCompleteGraph();
+    }
+
+    public void buildCompleteGraph() {
         Set<String> allSeenNodes = Sets.newHashSet();
-
-        Map<String, Integer> initialSearchResults = fetcher.getActivityMap();
+        Map<String, Integer> initialSearchResults = getActivityMap(MAX_SEARCHRESULTS);
         allSeenNodes.addAll(initialSearchResults.keySet());
-        Set<String> nodesInCurrentIteration = Sets.newHashSet();
 
-        //get all outgoing links for topentries
-        final Set<String> round1 = getTopEntries(8, initialSearchResults).keySet();
-        for (String topEntry : round1) {
-            PageLinkInfoFetcher plif = new PageLinkInfoFetcher(topEntry, lang, new DateMidnight(2011, 6, 1).toDateTime(), wikiAPIClient);
-            nodesInCurrentIteration.addAll(plif.getLinkInformation().getFilteredLinks());
+        for (String topEntry : initialSearchResults.keySet()) {
+            PageLinkInfoFetcher plif = new PageLinkInfoFetcher(topEntry, lang, mostRecentDate, wikiAPIClient);
+            allSeenNodes.addAll(plif.getLinkInformation().getFilteredLinks());
         }
-        allSeenNodes.addAll(nodesInCurrentIteration);
+        Map<Integer, String> allPages = prepareNodesForNetwork(allSeenNodes);
 
+        DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames);
+        String completeJSONForPage = dp.buildNetworksAndGenerateInfo(searchTerm);
+        writeToFile(completeJSONForPage);
+    }
 
-        final Set<String> round2 = getTopEntries(8 * 2, fetcher.getActivityMap(nodesInCurrentIteration)).keySet();
-        nodesInCurrentIteration = Sets.newHashSet();
-        for (String topEntry : round2) {
-            PageLinkInfoFetcher plif = new PageLinkInfoFetcher(topEntry, lang, new DateMidnight(2011, 6, 1).toDateTime(), wikiAPIClient);
-            nodesInCurrentIteration.addAll(plif.getLinkInformation().getFilteredLinks());
+    private void writeToFile(final String completeJSONForPage) {
+        try {
+            final String fileName = "out/" + StringUtils.replace(searchTerm, " ", "_") + ".json";
+            FileUtils.write(new File(fileName), completeJSONForPage, Const.ENCODING);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        allSeenNodes.addAll(nodesInCurrentIteration);
-
-
-
-//        final Set<String> round3 = getTopEntries(8 * 3, fetcher.getActivityMap(nodesInCurrentIteration)).keySet();
-//        nodesInCurrentIteration = Sets.newHashSet();
-//        for (String topEntry : round3) {
-//            PageLinkInfoFetcher plif = new PageLinkInfoFetcher(topEntry, lang, new DateMidnight(2011, 6, 1).toDateTime(), wikiAPIClient);
-//            nodesInCurrentIteration.addAll(plif.getLinkInformation().getFilteredLinks());
-//        }
-//        allSeenNodes.addAll(nodesInCurrentIteration);
-
-        System.out.println(allSeenNodes.size());
-        System.out.println(allSeenNodes);
-
-        Map<Integer, String> allPages = fetcher.prepareNodesForNetwork(allSeenNodes);
-
-        List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(1,
-                PageHistoryFetcher.MOST_RECENT_DATE.toDateTime());
-        DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames, "en");
-        String completeJSONForPage = dp.buildNetworksAndGenerateInfo();
-        FileUtils.write(new File("out/search_dsk.json"), completeJSONForPage, "UTF-8");
     }
 
     private Map<Integer, String> prepareNodesForNetwork(final Set<String> allSeenNodes) {
         Map<Integer, String> idsAndPages = Maps.newHashMap();
         for (String pageTitle : allSeenNodes) {
+            pageTitle = StringUtils.replace(pageTitle, "_", " ");
             try {
                 int id = database.getPageIDFromCache(pageTitle, lang);
                 if (id != 0) {
@@ -123,14 +110,14 @@ public final class RelatedResultsFetcher {
                 LOG.info("Problem while getting: " + pageTitle);
             }
         }
-
-        new PageHistoryFetcher(idsAndPages, "en", 1).fetchCompleteCategories();
+        new PageHistoryFetcher(idsAndPages, "en", allTimeFrames).fetchCompleteCategories();
         return idsAndPages;
     }
 
-    private static Map<String, Integer> getTopEntries(final int nbrResults,
+    private Map<String, Integer> getTopEntries(final int nbrResults,
                                       final Map<String, Integer> results) {
-        LinkedHashMap<String, Integer> sortetedResults = Maps.newLinkedHashMap(new MapSorter<String, Integer>().sortByValue(results));
+        LinkedHashMap<String, Integer> sortetedResults = Maps
+                .newLinkedHashMap(new MapSorter<String, Integer>().sortByValue(results));
         LinkedHashMap<String, Integer> filteredResults = Maps.newLinkedHashMap();
         List<String> sortedKeys = Lists.newArrayList(sortetedResults.keySet());
         for (int i = 0; i < nbrResults; i++) {

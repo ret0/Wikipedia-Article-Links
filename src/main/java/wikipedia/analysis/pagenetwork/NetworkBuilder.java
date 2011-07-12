@@ -2,6 +2,7 @@ package wikipedia.analysis.pagenetwork;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -11,14 +12,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.graphstream.algorithm.BetweennessCentrality;
+import org.graphstream.algorithm.Dijkstra;
 import org.graphstream.graph.implementations.DefaultGraph;
 import org.graphstream.graph.implementations.MultiGraph;
-import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.MapSorter;
 import wikipedia.database.DBUtil;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
@@ -32,95 +33,93 @@ import com.google.common.collect.Sets;
  */
 public final class NetworkBuilder {
 
+    private static final int MAX_NODES = 50;
+    /**
+     * Constants for Node-Filtering
+     */
+    private static final int INDEG_MULTIPLICATOR = 1000;
+    private static final double MIN_INDEG_FOR_DIRECT_NEIGHBOR = 1.5;
+    private static final int MIN_INDEG_FOR_MUTALLY_CONNECTED = 2;
+
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
-
-    private final String revisionDateTime;
-    private final DBUtil database;
-    private static final int MIN_INDEGREE = 120;
-
-    private final Map<Integer, String> allPagesInNetwork;
-
     private static final int NUM_THREADS = 8;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_THREADS);
 
-    private final DateTime dateTime;
+    private final String searchTerm;
+    private final DBUtil database;
+    private final Map<Integer, String> allPagesInNetwork;
 
-    public NetworkBuilder(final Map<Integer, String> allPagesInNetwork, final String lang,
-            final DateMidnight dateMidnight, final DBUtil database) {
-        this.dateTime = dateMidnight.toDateTime();
-        this.revisionDateTime = dateMidnight.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+    public NetworkBuilder(final Map<Integer, String> allPagesInNetwork,
+                          final DBUtil database,
+                          final String searchTerm) {
         this.database = database;
         this.allPagesInNetwork = allPagesInNetwork;
+        this.searchTerm = searchTerm;
     }
 
-    public TimeFrameGraph getGraphAtDate(final List<String> nodeDebug) {
-            List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
+    public TimeFrameGraph getGraphAtDate(final DateTime dateTime) {
+        String revisionDateTime = dateTime.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
+        List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
         Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
 
         final int numberOfLinks = allLinksInNetwork.size();
         Map<String, Float> pageIndegMap = Maps.newHashMap();
         for (String targetPage : indegreeMatrix.keySet()) {
-            /*if (nodeQualifiedForGraph(indegreeMatrix, targetPage, nodeDebug, numberOfLinks)
-                    /*&& !nameIndexMap.containsKey(targetPage)) {
-                nameIndexMap.put(targetPage, nodeIndex++);
-            }*/
-            List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
-            int totalNumberOfLinks = allIncommingLinks.size();
-            final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
-            pageIndegMap.put(targetPage, magicNumber);
+            final float indegValue = calculateIndegree(numberOfLinks, indegreeMatrix.get(targetPage));
+            pageIndegMap.put(targetPage, indegValue);
         }
 
-        // create graph using gs
-        DefaultGraph graph = new MultiGraph("g1", false, true);
-        Random r = new Random();
-        for (GraphEdge edge : allLinksInNetwork) {
-            graph.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo());
+        Set<String> mutuallyConnectedNeighbors = Sets.newHashSet();
+        for (GraphEdge graphEdge : allLinksInNetwork) {
+            if (allLinksInNetwork.contains(new GraphEdge(graphEdge.getTo(), graphEdge.getFrom()))) {
+                if (graphEdge.getFrom().equals(searchTerm) || graphEdge.getTo().equals(searchTerm)) {
+                    mutuallyConnectedNeighbors.add(graphEdge.getFrom());
+                    mutuallyConnectedNeighbors.add(graphEdge.getTo());
+                }
+            }
         }
 
-        /*Dijkstra d = new Dijkstra(Dijkstra.Element.edge, "weight", "Dominique Strauss-Kahn");
-        LOG.info("BEFORE INIT");
-        d.init(graph);
-        LOG.info("BEFORE COMPUTE");
-        d.compute();
+        DefaultGraph graph = prepareGraph(allLinksInNetwork);
+        Dijkstra shortestPath = prepareShortestPath(graph);
 
-        //indeg
         int nodeIndex = 0;
         Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
-        for (Entry<String, Float> pageIndegEntry : allPagesOrderedByIndeg.entrySet()) {
-            if (nodeIndex >= 30) {
-                break;
-            }
-            nameIndexMap.put(pageIndegEntry.getKey(), nodeIndex++);
-        }
 
         //direct neighbors
         for (String pageName : pageIndegMap.keySet()) {
-            double shortestPathLength = d.getShortestPathLength(graph.getNode(pageName));
-            //LOG.info("calucladed shortest path: " + shortestPathLength);
-            if ((shortestPathLength <= 1 && allPagesOrderedByIndeg.get(pageName) >= 1.5 && !nameIndexMap.containsKey(pageName)) || shortestPathLength < 1) {
-                LOG.info("adding close neighbor: " + pageName + "magic Number: " + allPagesOrderedByIndeg.get(pageName));
+            if (!nameIndexMap.containsKey(pageName)) {
+                final boolean importantDirectNeighbor = importantDirectNeighbor(
+                        allPagesOrderedByIndeg, pageName, shortestPath, graph);
+                final boolean mutuallyConnectedNeighbor = mutuallyConnectedNeighbor(
+                        mutuallyConnectedNeighbors, allPagesOrderedByIndeg,
+                        pageName);
+                if (importantDirectNeighbor || mutuallyConnectedNeighbor) {
+                    nameIndexMap.put(pageName, nodeIndex++);
+                }
+            }
+        }
+
+        //indeg
+        while (nodeIndex < MAX_NODES) {
+            Iterator<Entry<String, Float>> iterator = allPagesOrderedByIndeg.entrySet().iterator();
+            Entry<String, Float> entry = iterator.next();
+            final String pageName = entry.getKey();
+            if (!nameIndexMap.containsKey(pageName)) {
                 nameIndexMap.put(pageName, nodeIndex++);
+            }
+        }
+
+        //calculate mini graph centrality
+        /*DefaultGraph graph2 = new MultiGraph("g2", false, true);
+        for (GraphEdge edge : allLinksInNetwork) {
+            if(pageIndegMap.get(edge.getFrom()) != null &&  pageIndegMap.get(edge.getFrom()) > 1 ||
+                    pageIndegMap.get(edge.getTo()) != null && pageIndegMap.get(edge.getTo()) > 1) {
+                graph2.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo(), true);
             }
         }*/
 
-        BetweennessCentrality bc = new BetweennessCentrality();
-        bc.init(graph);
-        bc.registerProgressIndicator(new BetweennessCentrality.Progress() {
-            @Override
-            public void progress(final float percent) {
-                System.out.println(percent);
-            }
-        });
-        bc.compute();
-        for (String pageName : pageIndegMap.keySet()) {
-            double centr = bc.centrality(graph.getNode(pageName));
-            LOG.info(pageName + ";" + centr);
-        }
-
-
         List<GraphEdge> edgeOutput = Lists.newArrayList();
-        // TODO loop not optimal
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
             String targetPageName = entry.getKey();
             List<String> incommingLinks = entry.getValue();
@@ -128,8 +127,7 @@ public final class NetworkBuilder {
                 if (sourcePageName.equals(targetPageName)) {
                     continue;
                 }
-                if (nameIndexMap.get(sourcePageName) != null
-                        && nameIndexMap.get(targetPageName) != null) {
+                if (nameIndexMap.get(sourcePageName) != null && nameIndexMap.get(targetPageName) != null) {
                     edgeOutput.add(new GraphEdge(sourcePageName, targetPageName));
                 }
             }
@@ -137,25 +135,64 @@ public final class NetworkBuilder {
         return new TimeFrameGraph(nameIndexMap, edgeOutput, dateTime);
     }
 
+    private Dijkstra prepareShortestPath(final DefaultGraph graph) {
+        Dijkstra shortestPath = new Dijkstra(Dijkstra.Element.edge, "weight", searchTerm);
+        shortestPath.init(graph);
+        shortestPath.compute();
+        return shortestPath;
+    }
 
-    private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
+    private DefaultGraph prepareGraph(final List<GraphEdge> allLinksInNetwork) {
+        // create graph using gs
+        DefaultGraph graph = new MultiGraph("graphForShortestPath", false, true);
+        Random r = new Random();
+        for (GraphEdge edge : allLinksInNetwork) {
+            graph.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo(), true);
+        }
+        return graph;
+    }
+
+    private float calculateIndegree(final int numberOfLinks,
+                                    final List<String> allIncommingLinks) {
+        int totalNumberOfLinks = allIncommingLinks.size();
+        return ((float) totalNumberOfLinks / (float) numberOfLinks) * INDEG_MULTIPLICATOR;
+    }
+
+    private boolean mutuallyConnectedNeighbor(final Set<String> mutuallyConnectedNeighbors,
+                                              final Map<String, Float> allPagesOrderedByIndeg,
+                                              final String pageName) {
+        return mutuallyConnectedNeighbors.contains(pageName) &&
+               allPagesOrderedByIndeg.get(pageName) >= MIN_INDEG_FOR_MUTALLY_CONNECTED;
+    }
+
+    private boolean importantDirectNeighbor(final Map<String, Float> allPagesOrderedByIndeg,
+                                            final String pageName,
+                                            final Dijkstra shortestPath,
+                                            final DefaultGraph graph) {
+        double shortestPathLength = shortestPath.getShortestPathLength(graph.getNode(pageName));
+        return shortestPathLength <= 1 &&
+               allPagesOrderedByIndeg.get(pageName) >= MIN_INDEG_FOR_DIRECT_NEIGHBOR;
+    }
+
+
+    /*private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
                                           final String targetPage, final List<String> nodeDebug, final int numberOfLinks) {
         List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
         int totalNumberOfLinks = allIncommingLinks.size();
         //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
         final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
         final boolean nodeQualified = magicNumber >= 1.35f;
-       // Set<String> selectedPeople = Sets.newHashSet("Michael Jackson", "Justin Bieber", "Lady Gaga", "Bob Dylan", "Elvis Presley");
-//        if(selectedPeople.contains(targetPage)) {
         if (magicNumber > 1.25) {
             nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + totalNumberOfLinks + "=" + magicNumber);
         }
         return nodeQualified;
-    }
+    }*/
 
+    /**
+     * @param allLinksInNetwork
+     * @return In-degree matrix key:target_page value: all pages that point to target_page (key)
+     */
     private Map<String, List<String>> initIndegreeMatrix(final List<GraphEdge> allLinksInNetwork) {
-        // In-degree matrix key:target_page, value:source_page
-        // value: all pages that point to target_page (key)
         Map<String, List<String>> indegreeMatrix = Maps.newHashMap();
         for (GraphEdge link : allLinksInNetwork) {
             String from = link.getFrom();
@@ -169,10 +206,10 @@ public final class NetworkBuilder {
         return indegreeMatrix;
     }
 
-    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetworkList, final String revisionDateTime) {
+    private List<GraphEdge> buildAllLinksWithinNetwork(final Map<Integer, String> allPagesInNetworkList,
+                                                       final String revisionDateTime) {
         Set<String> allPageNamesInNetwork = Sets.newHashSet(allPagesInNetworkList.values());
-        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists
-                .<GraphEdge> newArrayList());
+        final List<GraphEdge> allLinksInNetwork = Collections.synchronizedList(Lists.<GraphEdge>newArrayList());
         LOG.info("Number of Tasks: " + allPageNamesInNetwork.size());
         int taskCounter = 1;
         try {
@@ -214,12 +251,12 @@ public final class NetworkBuilder {
         private final String revisionDateTime;
 
         private SQLExecutor(final int pageId, final Set<String> allPageNamesInNetwork,
-                final String pageName, final List<GraphEdge> allLinksInNetwork2, final int counter,
+                final String pageName, final List<GraphEdge> allLinksInNetwork, final int counter,
                 final String revisionDateTime) {
             this.pageId = pageId;
             this.allPageNamesInNetwork = allPageNamesInNetwork;
             this.pageName = pageName;
-            this.allLinksInNetwork = allLinksInNetwork2;
+            this.allLinksInNetwork = allLinksInNetwork;
             this.counter = counter;
             this.revisionDateTime = revisionDateTime;
         }
@@ -229,8 +266,7 @@ public final class NetworkBuilder {
             if (counter % LOG_MODULO == 0) {
                 LOG.info("Task: " + counter);
             }
-            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId,
-                    revisionDateTime);
+            Collection<String> allOutgoingLinksOnPage = database.getAllLinksForRevision(pageId, revisionDateTime);
             for (String outgoingLink : allOutgoingLinksOnPage) {
                 if (allPageNamesInNetwork.contains(outgoingLink)) {
                     allLinksInNetwork.add(new GraphEdge(pageName, outgoingLink));
