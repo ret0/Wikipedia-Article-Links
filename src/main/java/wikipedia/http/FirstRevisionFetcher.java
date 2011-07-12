@@ -1,8 +1,6 @@
 package wikipedia.http;
 
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
 import wikipedia.xml.Api;
@@ -13,7 +11,7 @@ import wikipedia.xml.XMLTransformer;
  */
 public final class FirstRevisionFetcher {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
+    //private static final Logger LOG = LoggerFactory.getLogger(FirstRevisionFetcher.class.getName());
 
     private final String pageTitle;
     private final String lang;
@@ -28,7 +26,7 @@ public final class FirstRevisionFetcher {
 
     public DateTime getFirstRevisionDate() {
         final String url = getURL();
-        LOG.info("Fetching URL: " + url);
+        //LOG.info("Fetching URL: " + url);
         String xmlResponse = wikiAPIClient.executeHTTPRequest(url);
         //LOG.info(xmlResponse);
         Api revisionFromXML = XMLTransformer.getRevisionFromXML(xmlResponse);

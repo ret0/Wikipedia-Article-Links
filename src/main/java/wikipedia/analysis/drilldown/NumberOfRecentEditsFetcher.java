@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import util.HTTPUtil;
 import wikipedia.database.DBUtil;
@@ -15,12 +13,14 @@ import wikipedia.xml.Page;
 import wikipedia.xml.Rev;
 import wikipedia.xml.XMLTransformer;
 
+/**
+ * Downloads the number of edits for a given article
+ * over a number of weeks
+ */
 public final class NumberOfRecentEditsFetcher {
 
     private final String lang;
     private final WikiAPIClient apiClient = new WikiAPIClient(new DefaultHttpClient());
-
-    private static final Logger LOG = LoggerFactory.getLogger(NumberOfRecentEditsFetcher.class.getName());
 
     public NumberOfRecentEditsFetcher(final String lang) {
         this.lang = lang;
@@ -37,13 +37,11 @@ public final class NumberOfRecentEditsFetcher {
     }
 
     private Page downloadPages(final int numberOfWeeks,
-                                        final String pageTitle) {
+                               final String pageTitle) {
         final DateTime now = new DateTime();
         final String dateStringNow = now.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         final String dateStringBackThen = now.minusWeeks(numberOfWeeks).toString(DBUtil.MYSQL_DATETIME_FORMATTER);
-
         final String requestURL = getURL(dateStringBackThen, dateStringNow, pageTitle);
-        LOG.info("Requesting: " + requestURL);
         final String httpResultText = apiClient.executeHTTPRequest(requestURL);
         final Api revisionFromXML = XMLTransformer.getRevisionFromXML(httpResultText);
         return revisionFromXML.getQuery().getPages().get(0);

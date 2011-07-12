@@ -99,8 +99,7 @@ public final class PageLinkInfoFetcher {
     }
 
     private String getURL() {
-        final String timestamp = revisionDate.toString(ISODateTimeFormat.dateHourMinuteSecond())
-                + "Z";
+        final String timestamp = revisionDate.toString(ISODateTimeFormat.dateHourMinuteSecond()) + "Z";
         final String encodedPageName = HTTPUtil.urlEncode(pageName);
         final String revisionProperties = HTTPUtil.urlEncode("content|ids");
         return "http://" + lang

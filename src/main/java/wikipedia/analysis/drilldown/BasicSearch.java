@@ -13,6 +13,10 @@ import wikipedia.xml.XMLTransformer;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 
+/**
+ * Executes Wikipedia Full text search using API, returns NUMBER_OF_RESULTS
+ * page titles
+ */
 public final class BasicSearch {
 
     private static final int NUMBER_OF_RESULTS = 20;

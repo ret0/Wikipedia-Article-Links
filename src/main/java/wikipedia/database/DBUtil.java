@@ -16,6 +16,8 @@ import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -52,8 +54,7 @@ public final class DBUtil {
         XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("context.xml"));
         final BasicDataSource bean = (BasicDataSource) beanFactory.getBean("dataSource");
         jdbcTemplate = new SimpleJdbcTemplate(bean);
-        DataSourceTransactionManager dstm = new DataSourceTransactionManager(
-                bean);
+        DataSourceTransactionManager dstm = new DataSourceTransactionManager(bean);
         transactionTemplate = new TransactionTemplate(dstm);
     }
 
@@ -81,11 +82,14 @@ public final class DBUtil {
             @Override
             protected void doInTransactionWithoutResult(final TransactionStatus status) {
                 for (String outgoingLink : pliToBeStored.getLinks()) {
-                    try {
-                        getStoredLink(pliToBeStored, timeStamp, outgoingLink);
-                    } catch (EmptyResultDataAccessException e) {
-                        storeLink(pliToBeStored, timeStamp, outgoingLink);
+                    if (PageLinkInfo.notInBlockList(outgoingLink)) {
+                        try {
+                            getStoredLink(pliToBeStored, timeStamp, outgoingLink);
+                        } catch (EmptyResultDataAccessException e) {
+                            storeLink(pliToBeStored, timeStamp, outgoingLink);
+                        }
                     }
+
                 }
             }
 
@@ -93,11 +97,16 @@ public final class DBUtil {
                                    final String timeStamp,
                                    final String outgoingLink) {
                 if (outgoingLink.length() < MAX_TITLE_LENGTH) {
-                    jdbcTemplate.update(
-                            "INSERT INTO outgoing_links "
-                                    + "(src_page_id, target_page_title, revision_date) "
-                                    + "VALUES (?, ?, ?)", new Object[] {pliToBeStored.getPageID(),
-                                    outgoingLink, timeStamp });
+                    //LOG.info("Storing " + outgoingLink);
+                    try {
+                        jdbcTemplate.update(
+                                "INSERT INTO outgoing_links "
+                                        + "(src_page_id, target_page_title, revision_date) "
+                                        + "VALUES (?, ?, ?)", new Object[] {pliToBeStored.getPageID(),
+                                        outgoingLink, timeStamp });
+                    } catch (UncategorizedSQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -243,15 +252,13 @@ public final class DBUtil {
 
     public int getPageIDFromCache(final String pageTitle, final String lang) {
         try {
-            int pageId = jdbcTemplate.queryForInt("SELECT page_id FROM page_id_cache WHERE page_title = ?", new Object[] {pageTitle});
+            int pageId = jdbcTemplate.queryForInt("SELECT page_id FROM pages WHERE page_title = ?",
+                    new Object[] {pageTitle});
             return pageId;
         } catch (EmptyResultDataAccessException e) {
-            NumberOfRecentEditsFetcher fetcher = new NumberOfRecentEditsFetcher(lang);
-            int pageID = fetcher.getPageID(pageTitle);
-            if(pageID != 0) {
-                jdbcTemplate.update("INSERT INTO page_id_cache VALUES (?, ?);", new Object[] {pageID, pageTitle});
-            }
-            return pageID;
+            return new NumberOfRecentEditsFetcher(lang).getPageID(pageTitle);
+        } catch (IncorrectResultSizeDataAccessException e) {
+            return new NumberOfRecentEditsFetcher(lang).getPageID(pageTitle);
         }
     }
 
