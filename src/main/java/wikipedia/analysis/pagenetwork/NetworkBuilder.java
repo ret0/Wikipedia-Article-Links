@@ -84,10 +84,18 @@ public final class NetworkBuilder {
         Dijkstra shortestPath = prepareShortestPath(graph);
 
         int nodeIndex = 0;
-        Map<String, Float> allPagesOrderedByIndeg = new MapSorter<String, Float>().sortByValue(pageIndegMap);
+        final MapSorter<String, Float> mapSorter = new MapSorter<String, Float>();
+        Map<String, Float> allPagesOrderedByIndeg = mapSorter.sortByValue(pageIndegMap);
+
+        Map<String, Float> allMutuallyConnectdNeighborsByIndeg = mapSorter
+                .sortByValue(generateIndegMapForMutuallyConnectedNeighbors(
+                        mutuallyConnectedNeighbors, allPagesOrderedByIndeg));
+
+        Map<String, Integer> allDirectNeighborsByIndeg = new MapSorter<String, Integer>()
+                .sortByValue(generateSPMapForDirectNeighbors(allPagesOrderedByIndeg.keySet(), shortestPath, graph));
 
         //direct neighbors
-        for (String pageName : pageIndegMap.keySet()) {
+        /*for (String pageName : pageIndegMap.keySet()) {
             if (!nameIndexMap.containsKey(pageName)) {
                 final boolean importantDirectNeighbor = importantDirectNeighbor(
                         allPagesOrderedByIndeg, pageName, shortestPath, graph);
@@ -98,6 +106,22 @@ public final class NetworkBuilder {
                     nameIndexMap.put(pageName, nodeIndex++);
                 }
             }
+        }*/
+
+        int mutualLimit = 0;
+        for (String pageName : allMutuallyConnectdNeighborsByIndeg.keySet()) {
+            if (mutualLimit++ > 30) {
+                break;
+            }
+            nameIndexMap.put(pageName, nodeIndex++);
+        }
+
+        int directLimit = 0;
+        for (String pageName : allDirectNeighborsByIndeg.keySet()) {
+            if (directLimit++ > 10) {
+                break;
+            }
+            nameIndexMap.put(pageName, nodeIndex++);
         }
 
         //indeg
@@ -124,6 +148,26 @@ public final class NetworkBuilder {
             }
         }
         return new TimeFrameGraph(nameIndexMap, edgeOutput, dateTime);
+    }
+
+    private Map<String, Integer> generateSPMapForDirectNeighbors(final Set<String> allPages,
+                                                                 final Dijkstra shortestPath,
+                                                                 final DefaultGraph graph) {
+        Map<String, Integer> neighbors = Maps.newHashMap();
+        for (String pageName : allPages) {
+            int shortestPathLength = (int) shortestPath.getShortestPathLength(graph.getNode(pageName));
+            neighbors.put(pageName, shortestPathLength);
+        }
+        return neighbors;
+    }
+
+    private Map<String, Float> generateIndegMapForMutuallyConnectedNeighbors(final Set<String> mutuallyConnectedNeighbors,
+                                                                             final Map<String, Float> allPagesOrderedByIndeg) {
+        Map<String, Float> neighbors = Maps.newHashMap();
+        for (String pageName : mutuallyConnectedNeighbors) {
+            neighbors.put(pageName, allPagesOrderedByIndeg.get(pageName));
+        }
+        return neighbors;
     }
 
     private Dijkstra prepareShortestPath(final DefaultGraph graph) {
