@@ -69,6 +69,7 @@ public final class PageLinkInfo {
     public static boolean notInBlockList(final String input) {
         List<String> igoredByPrefix = Lists.newArrayList(
                 "#",
+                ":fr",
                 "Image:",
                 "imdbname:",
                 "simple:",

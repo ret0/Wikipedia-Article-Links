@@ -33,13 +33,13 @@ import com.google.common.collect.Sets;
  */
 public final class NetworkBuilder {
 
-    private static final int MAX_NODES = 50;
+    private static final int MAX_NODES = 60;
     /**
      * Constants for Node-Filtering
      */
     private static final int INDEG_MULTIPLICATOR = 1000;
-    private static final double MIN_INDEG_FOR_DIRECT_NEIGHBOR = 1.5;
-    private static final int MIN_INDEG_FOR_MUTALLY_CONNECTED = 2;
+    private static final double MIN_INDEG_FOR_DIRECT_NEIGHBOR = 0.5;
+    private static final double MIN_INDEG_FOR_MUTALLY_CONNECTED = 1.5;
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
     private static final int NUM_THREADS = 8;
@@ -101,23 +101,14 @@ public final class NetworkBuilder {
         }
 
         //indeg
+        Iterator<Entry<String, Float>> iterator = allPagesOrderedByIndeg.entrySet().iterator();
         while (nodeIndex < MAX_NODES) {
-            Iterator<Entry<String, Float>> iterator = allPagesOrderedByIndeg.entrySet().iterator();
             Entry<String, Float> entry = iterator.next();
             final String pageName = entry.getKey();
             if (!nameIndexMap.containsKey(pageName)) {
                 nameIndexMap.put(pageName, nodeIndex++);
             }
         }
-
-        //calculate mini graph centrality
-        /*DefaultGraph graph2 = new MultiGraph("g2", false, true);
-        for (GraphEdge edge : allLinksInNetwork) {
-            if(pageIndegMap.get(edge.getFrom()) != null &&  pageIndegMap.get(edge.getFrom()) > 1 ||
-                    pageIndegMap.get(edge.getTo()) != null && pageIndegMap.get(edge.getTo()) > 1) {
-                graph2.addEdge(edge.getFrom() + edge.getTo() + r.nextDouble(), edge.getFrom(), edge.getTo(), true);
-            }
-        }*/
 
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
@@ -169,24 +160,10 @@ public final class NetworkBuilder {
                                             final String pageName,
                                             final Dijkstra shortestPath,
                                             final DefaultGraph graph) {
-        double shortestPathLength = shortestPath.getShortestPathLength(graph.getNode(pageName));
+        int shortestPathLength = (int) shortestPath.getShortestPathLength(graph.getNode(pageName));
         return shortestPathLength <= 1 &&
                allPagesOrderedByIndeg.get(pageName) >= MIN_INDEG_FOR_DIRECT_NEIGHBOR;
     }
-
-
-    /*private boolean nodeQualifiedForGraph(final Map<String, List<String>> indegreeMatrix,
-                                          final String targetPage, final List<String> nodeDebug, final int numberOfLinks) {
-        List<String> allIncommingLinks = indegreeMatrix.get(targetPage);
-        int totalNumberOfLinks = allIncommingLinks.size();
-        //final boolean nodeQualified = inDegree >= MIN_INDEGREE;
-        final float magicNumber = ((float) totalNumberOfLinks / (float) numberOfLinks) * 1000;
-        final boolean nodeQualified = magicNumber >= 1.35f;
-        if (magicNumber > 1.25) {
-            nodeDebug.add(revisionDateTime + "=" + targetPage + "=" + totalNumberOfLinks + "=" + magicNumber);
-        }
-        return nodeQualified;
-    }*/
 
     /**
      * @param allLinksInNetwork

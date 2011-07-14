@@ -1,11 +1,13 @@
 package wikipedia.analysis.drilldown;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -33,9 +35,24 @@ public final class RelatedResultsFetcher {
 
     private static final int MAX_SEARCHRESULTS = 12;
 
-    private static final int NBR_WEEKS = 4;
-
     private static final Logger LOG = LoggerFactory.getLogger(RelatedResultsFetcher.class.getName());
+
+    private static final String INTERVAL_CONFIG_KEY = "INTERVAL";
+    private static final String INTERVAL_CONFIG_DEFAULT = "MONTHS";
+
+    private static final String NUMBER_OF_REVISIONS_KEY = "NUMBER_OF_REVISIONS";
+    private static final String NUMBER_OF_REVISIONS_DEFAULT = "1";
+
+    private static final String START_DATE_KEY = "START_DATE";
+    private static final String START_DATE_DEFAULT = "2011, 7, 1";
+
+    private static final String SEARCH_TERM_KEY = "SEARCH_TERM";
+    private static final String SEARCH_TERM_DEFAULT = "MIT Center for Collective Intelligence";
+
+    private static final String WIKIPEDIA_LANG_KEY = "WIKIPEDIA_LANG";
+    private static final String WIKIPEDIA_LANG_DEFAULT = "en";
+
+    private static final int NBR_WEEKS = 4;
 
     private final String lang;
     private final String searchTerm;
@@ -46,12 +63,12 @@ public final class RelatedResultsFetcher {
     private final List<DateTime> allTimeFrames;
     private final DateTime mostRecentDate;
 
-    public RelatedResultsFetcher(final String searchTerm, final String lang, final int numberOfWeeksBack) {
+    public RelatedResultsFetcher(final String searchTerm, final String lang, final int numberOfMonthsBack, final DateTime startDate) {
         this.searchTerm = searchTerm;
         this.lang = lang;
         wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
-        mostRecentDate = new DateMidnight(2011, 6, 1).toDateTime();
-        allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(numberOfWeeksBack, mostRecentDate);
+        mostRecentDate = startDate;
+        allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(numberOfMonthsBack, mostRecentDate);
     }
 
     private Map<String, Integer> getActivityMap(final int topResults) {
@@ -66,9 +83,54 @@ public final class RelatedResultsFetcher {
     }
 
     public static void main(final String[] args) throws IOException {
-        final int numberOfWeeksBack = 1;
-        RelatedResultsFetcher fetcher = new RelatedResultsFetcher("Justin Biber", "en", numberOfWeeksBack);
-        fetcher.buildCompleteGraph();
+        String configFileName = readConfigFileName(args);
+        Properties configFile = new Properties();
+
+        if (!StringUtils.isEmpty(configFileName)) {
+            try {
+                FileInputStream openInputStream = FileUtils.openInputStream(new File(configFileName));
+                configFile.load(openInputStream);
+            } catch (Exception e) {
+                System.out.println("Usage: ProgramName ConfigfileName");
+                e.printStackTrace();
+            }
+        }
+
+        if (!configFile.isEmpty()) {
+            RelatedResultsFetcher fetcher = null;
+            try {
+                fetcher = getSettingsAndPrepareFetcher(configFile);
+            } catch (Exception e) {
+                System.out.println("Could not load all required settings from config. Exiting.");
+                e.printStackTrace();
+            }
+            if (fetcher != null) {
+                fetcher.buildCompleteGraph();
+            }
+        } else {
+            System.out.println("Could not load all required settings from config. Exiting.");
+        }
+    }
+
+    private static RelatedResultsFetcher getSettingsAndPrepareFetcher(final Properties configFile) {
+        final int numberOfMonthsBack = Integer.valueOf(
+                configFile.getProperty(NUMBER_OF_REVISIONS_KEY, NUMBER_OF_REVISIONS_DEFAULT));
+        final String dateString = configFile.getProperty(START_DATE_KEY, START_DATE_DEFAULT);
+        String[] dateParts = StringUtils.split(dateString, ",");
+        final Integer year = Integer.valueOf(dateParts[0].trim());
+        final Integer month = Integer.valueOf(dateParts[1].trim());
+        final Integer day = Integer.valueOf(dateParts[2].trim());
+        DateTime startDate = new DateMidnight(year, month, day).toDateTime();
+        final String searchTerm = configFile.getProperty(SEARCH_TERM_KEY, SEARCH_TERM_DEFAULT);
+        final String wikiLang = configFile.getProperty(WIKIPEDIA_LANG_KEY, WIKIPEDIA_LANG_DEFAULT);
+        return new RelatedResultsFetcher(searchTerm, wikiLang, numberOfMonthsBack, startDate);
+    }
+
+    private static String readConfigFileName(final String[] args) {
+        if (args.length > 0) {
+            return args[0];
+        }
+        return "";
     }
 
     public void buildCompleteGraph() {
