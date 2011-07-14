@@ -15,11 +15,10 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.DateListGenerator;
 import wikipedia.analysis.pagenetwork.CategoryLists;
 import wikipedia.database.DBUtil;
 import wikipedia.network.PageLinkInfo;
-
-import com.google.common.collect.Lists;
 
 /**
  * Downloads all link revisions of a given page
@@ -55,21 +54,6 @@ public final class PageHistoryFetcher {
         this.lang = lang;
         this.allRelevantTimeStamps = allRelevantTimeStamps;
         allPagesInAllCategories = pages;
-    }
-
-    /**
-     * @return List of Dates most recent to oldest
-     */
-    public static List<DateTime> getAllDatesForHistory(final int numberOfRevisions,
-                                                       final DateTime mostRecent) {
-        List<DateTime> allDatesToFetch = Lists.newArrayList();
-        LOG.info("Fetching the following Dates: ");
-        for (int months = 0; months < numberOfRevisions; months++) {
-            final DateTime fetchDate = mostRecent.toDateTime().minusMonths(months);
-            LOG.info(fetchDate.toString());
-            allDatesToFetch.add(fetchDate);
-        }
-        return allDatesToFetch;
     }
 
     protected void fetchAllRecords(final int pageId,
@@ -148,7 +132,7 @@ public final class PageHistoryFetcher {
      */
     public static void main(final String[] args) {
         final DateTime mostRecent = new DateMidnight(2011, 7, 1).toDateTime();
-        List<DateTime> allDatesForHistory = getAllDatesForHistory(2, mostRecent);
+        List<DateTime> allDatesForHistory = DateListGenerator.getMonthGenerator().getDateList(2, mostRecent);
         new PageHistoryFetcher(CategoryLists.BORN_IN_THE_80IES, "en", allDatesForHistory).fetchCompleteCategories();
     }
 

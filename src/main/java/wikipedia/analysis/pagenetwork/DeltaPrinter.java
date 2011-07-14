@@ -12,9 +12,9 @@ import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 
+import util.DateListGenerator;
 import wikipedia.database.DBUtil;
 import wikipedia.http.CategoryMemberFetcher;
-import wikipedia.http.PageHistoryFetcher;
 import wikipedia.network.GraphEdge;
 import wikipedia.network.TimeFrameGraph;
 
@@ -62,8 +62,8 @@ public final class DeltaPrinter {
 
     private static void generateFileForCombination(final List<String> categories,
                                                    final String outputFileName) throws IOException {
-        List<DateTime> allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(36,
-                new DateMidnight(2011, 7, 1).toDateTime());
+        final DateTime dateTime = new DateMidnight(2011, 7, 1).toDateTime();
+        List<DateTime> allTimeFrames = DateListGenerator.getMonthGenerator().getDateList(36, dateTime);
         DeltaPrinter dp = new DeltaPrinter(categories, allTimeFrames, "en");
         String completeJSONForPage = dp.buildNetworksAndGenerateInfoXXX();
         FileUtils.write(new File(outputFileName), completeJSONForPage, "UTF-8");

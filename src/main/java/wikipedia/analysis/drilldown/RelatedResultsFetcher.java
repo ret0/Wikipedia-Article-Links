@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.Const;
+import util.DateListGenerator;
 import util.MapSorter;
 import wikipedia.analysis.pagenetwork.DeltaPrinter;
 import wikipedia.database.DBUtil;
@@ -33,12 +34,14 @@ import com.google.common.collect.Sets;
 
 public final class RelatedResultsFetcher {
 
+
     private static final int MAX_SEARCHRESULTS = 12;
 
     private static final Logger LOG = LoggerFactory.getLogger(RelatedResultsFetcher.class.getName());
 
     private static final String INTERVAL_CONFIG_KEY = "INTERVAL";
-    private static final String INTERVAL_CONFIG_DEFAULT = "MONTHS";
+    private static final String INTERVAL_CONFIG_MONTHS = "MONTHS";
+    private static final String INTERVAL_CONFIG_DEFAULT = INTERVAL_CONFIG_MONTHS;
 
     private static final String NUMBER_OF_REVISIONS_KEY = "NUMBER_OF_REVISIONS";
     private static final String NUMBER_OF_REVISIONS_DEFAULT = "1";
@@ -63,12 +66,20 @@ public final class RelatedResultsFetcher {
     private final List<DateTime> allTimeFrames;
     private final DateTime mostRecentDate;
 
-    public RelatedResultsFetcher(final String searchTerm, final String lang, final int numberOfMonthsBack, final DateTime startDate) {
+    /**
+     *
+     * @param searchTerm
+     * @param lang
+     * @param allTimeFrames length >= 1
+     */
+    public RelatedResultsFetcher(final String searchTerm,
+                                 final String lang,
+                                 final List<DateTime> allTimeFrames) {
         this.searchTerm = searchTerm;
         this.lang = lang;
         wikiAPIClient = new WikiAPIClient(new DefaultHttpClient());
-        mostRecentDate = startDate;
-        allTimeFrames = PageHistoryFetcher.getAllDatesForHistory(numberOfMonthsBack, mostRecentDate);
+        this.allTimeFrames = allTimeFrames;
+        mostRecentDate = allTimeFrames.get(allTimeFrames.size() - 1);
     }
 
     private Map<String, Integer> getActivityMap(final int topResults) {
@@ -113,7 +124,7 @@ public final class RelatedResultsFetcher {
     }
 
     private static RelatedResultsFetcher getSettingsAndPrepareFetcher(final Properties configFile) {
-        final int numberOfMonthsBack = Integer.valueOf(
+        final int numberOfRevisionsBack = Integer.valueOf(
                 configFile.getProperty(NUMBER_OF_REVISIONS_KEY, NUMBER_OF_REVISIONS_DEFAULT));
         final String dateString = configFile.getProperty(START_DATE_KEY, START_DATE_DEFAULT);
         String[] dateParts = StringUtils.split(dateString, ",");
@@ -123,7 +134,20 @@ public final class RelatedResultsFetcher {
         DateTime startDate = new DateMidnight(year, month, day).toDateTime();
         final String searchTerm = configFile.getProperty(SEARCH_TERM_KEY, SEARCH_TERM_DEFAULT);
         final String wikiLang = configFile.getProperty(WIKIPEDIA_LANG_KEY, WIKIPEDIA_LANG_DEFAULT);
-        return new RelatedResultsFetcher(searchTerm, wikiLang, numberOfMonthsBack, startDate);
+        List<DateTime> allDates = prepareDateList(
+                configFile.getProperty(INTERVAL_CONFIG_KEY, INTERVAL_CONFIG_DEFAULT), startDate,
+                numberOfRevisionsBack);
+        return new RelatedResultsFetcher(searchTerm, wikiLang, allDates);
+    }
+
+    private static List<DateTime> prepareDateList(final String intervalConfig,
+                                                  final DateTime startDate,
+                                                  final int numberOfRevisions) {
+        if (intervalConfig.equals(INTERVAL_CONFIG_MONTHS)) {
+            return DateListGenerator.getMonthGenerator().getDateList(numberOfRevisions, startDate);
+        } else {
+            return DateListGenerator.getWeekGenerator().getDateList(numberOfRevisions, startDate);
+        }
     }
 
     private static String readConfigFileName(final String[] args) {
@@ -177,7 +201,7 @@ public final class RelatedResultsFetcher {
     }
 
     private Map<String, Integer> getTopEntries(final int nbrResults,
-                                      final Map<String, Integer> results) {
+                                               final Map<String, Integer> results) {
         LinkedHashMap<String, Integer> sortetedResults = Maps
                 .newLinkedHashMap(new MapSorter<String, Integer>().sortByValue(results));
         LinkedHashMap<String, Integer> filteredResults = Maps.newLinkedHashMap();
