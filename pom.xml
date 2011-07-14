@@ -28,6 +28,9 @@
                 </executions>
                 <configuration>
                     <executable>maven</executable>
+                    <arguments>
+                        <argument>config/config.properties</argument>
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>
