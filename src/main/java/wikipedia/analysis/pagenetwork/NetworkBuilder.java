@@ -2,7 +2,6 @@ package wikipedia.analysis.pagenetwork;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -91,8 +90,8 @@ public final class NetworkBuilder {
                 .sortByValue(generateIndegMapForMutuallyConnectedNeighbors(
                         mutuallyConnectedNeighbors, allPagesOrderedByIndeg));
 
-        Map<String, Integer> allDirectNeighborsByIndeg = new MapSorter<String, Integer>()
-                .sortByValue(generateSPMapForDirectNeighbors(allPagesOrderedByIndeg.keySet(), shortestPath, graph));
+        Map<String, Integer> allDirectNeighborsByShortestPath = new MapSorter<String, Integer>()
+                .sortByValue(generateSPMapForDirectNeighbors(allPagesOrderedByIndeg.keySet(), shortestPath, graph), true);
 
         //direct neighbors
         /*for (String pageName : pageIndegMap.keySet()) {
@@ -110,24 +109,29 @@ public final class NetworkBuilder {
 
         int mutualLimit = 0;
         for (String pageName : allMutuallyConnectdNeighborsByIndeg.keySet()) {
-            if (mutualLimit++ > 30) {
+            if (mutualLimit++ > 25) {
                 break;
             }
             nameIndexMap.put(pageName, nodeIndex++);
         }
 
         int directLimit = 0;
-        for (String pageName : allDirectNeighborsByIndeg.keySet()) {
-            if (directLimit++ > 10) {
+        for (String pageName : allDirectNeighborsByShortestPath.keySet()) {
+            if (directLimit > 20) {
                 break;
             }
-            nameIndexMap.put(pageName, nodeIndex++);
+            if (!nameIndexMap.containsKey(pageName)) {
+                nameIndexMap.put(pageName, nodeIndex++);
+                directLimit++;
+            }
         }
 
         //indeg
-        Iterator<Entry<String, Float>> iterator = allPagesOrderedByIndeg.entrySet().iterator();
-        while (nodeIndex < MAX_NODES) {
-            Entry<String, Float> entry = iterator.next();
+
+        for (Entry<String, Float> entry : allPagesOrderedByIndeg.entrySet()) {
+            if (nodeIndex > MAX_NODES) {
+                break;
+            }
             final String pageName = entry.getKey();
             if (!nameIndexMap.containsKey(pageName)) {
                 nameIndexMap.put(pageName, nodeIndex++);
