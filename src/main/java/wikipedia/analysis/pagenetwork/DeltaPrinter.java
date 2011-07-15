@@ -123,7 +123,7 @@ public final class DeltaPrinter {
 
     private void printDeltaInfo(final ArrayList<GraphDelta> allDeltas) {
         for (GraphDelta graphDelta : allDeltas) {
-            System.out.println(graphDelta.getFormattedDate() + "/" + graphDelta.getNumberOfChanges());
+            System.out.println(graphDelta.getFormattedDate() + ":" + graphDelta.getNumberOfChanges());
         }
 
     }
