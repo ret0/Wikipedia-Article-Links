@@ -65,4 +65,12 @@ public final class GraphDelta {
             return "{ \"source\": \"" + link.getFrom() + "\", \"target\": \"" + link.getTo() + "\", \"value\": 1 }";
         }
     }
+
+    public String getFormattedDate() {
+        return formattedDate;
+    }
+
+    public int getNumberOfChanges() {
+        return add.size() + del.size();
+    }
 }

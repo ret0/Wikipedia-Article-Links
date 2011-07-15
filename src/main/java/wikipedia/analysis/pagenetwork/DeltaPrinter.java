@@ -117,7 +117,15 @@ public final class DeltaPrinter {
             allDeltas.add(new GraphDelta(prepareAddList(old, current), prepareDelList(old, current),
                     current.getAllEdges(), current.getFormatedDate()));
         }
+        printDeltaInfo(allDeltas);
         return allDeltas;
+    }
+
+    private void printDeltaInfo(final ArrayList<GraphDelta> allDeltas) {
+        for (GraphDelta graphDelta : allDeltas) {
+            System.out.println(graphDelta.getFormattedDate() + "/" + graphDelta.getNumberOfChanges());
+        }
+
     }
 
     private List<String> prepareDelList(final TimeFrameGraph old,
