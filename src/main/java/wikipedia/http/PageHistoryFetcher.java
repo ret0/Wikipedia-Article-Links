@@ -102,8 +102,7 @@ public final class PageHistoryFetcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, lang, dateToFetch,
-                        wikiAPIClient);
+                PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, lang, dateToFetch, wikiAPIClient);
                 PageLinkInfo linkInformation;
                 try {
                     linkInformation = plif.getLinkInformation();

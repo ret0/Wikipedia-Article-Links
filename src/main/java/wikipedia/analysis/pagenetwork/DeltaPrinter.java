@@ -125,7 +125,6 @@ public final class DeltaPrinter {
         for (GraphDelta graphDelta : allDeltas) {
             System.out.println(graphDelta.getFormattedDate() + ":" + graphDelta.getNumberOfChanges());
         }
-
     }
 
     private List<String> prepareDelList(final TimeFrameGraph old,
@@ -181,7 +180,7 @@ public final class DeltaPrinter {
     private String printLink(final Map<String, Integer> nameIndexMap,
                              final GraphEdge edge) {
         return "{\"source\": " + nameIndexMap.get(edge.getFrom()) + ", \"target\": "
-                + nameIndexMap.get(edge.getTo()) + ", \"value\": " + 1 + "}";
+                + nameIndexMap.get(edge.getTo()) + ", \"value\": " + edge.getEdgeWeight() + "}";
     }
 
 }
