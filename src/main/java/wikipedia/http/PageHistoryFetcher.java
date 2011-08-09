@@ -95,13 +95,13 @@ public final class PageHistoryFetcher {
                                                                    // not stable
                                                                    // yet
             if (dataBaseUtil.localDataForRecordUnavailable(pageId, dateToFetch)) {
-                try {
+                /*try {
                     Thread.sleep(THREAD_SLEEP_MSEC); // with a poolsize of 8,
                                                      // this should lead to ~7
                                                      // request pro second
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+                }*/
                 PageLinkInfoFetcher plif = new PageLinkInfoFetcher(pageTitle, lang, dateToFetch, wikiAPIClient);
                 PageLinkInfo linkInformation;
                 try {
