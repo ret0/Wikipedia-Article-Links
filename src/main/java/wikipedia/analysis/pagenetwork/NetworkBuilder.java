@@ -11,7 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.graphstream.algorithm.BetweennessCentrality;
 import org.graphstream.algorithm.Dijkstra;
+import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.DefaultGraph;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.joda.time.DateTime;
@@ -37,8 +39,6 @@ public final class NetworkBuilder {
      * Constants for Node-Filtering
      */
     private static final int INDEG_MULTIPLICATOR = 1000;
-    private static final double MIN_INDEG_FOR_DIRECT_NEIGHBOR = 0.5;
-    private static final double MIN_INDEG_FOR_MUTALLY_CONNECTED = 1.5;
 
     private static final Logger LOG = LoggerFactory.getLogger(NetworkBuilder.class.getName());
     private static final int NUM_THREADS = 8;
@@ -47,42 +47,30 @@ public final class NetworkBuilder {
     private final String searchTerm;
     private final DBUtil database;
     private final Map<Integer, String> allPagesInNetwork;
+    private final String lang;
 
     public NetworkBuilder(final Map<Integer, String> allPagesInNetwork,
                           final DBUtil database,
-                          final String searchTerm) {
+                          final String searchTerm,
+                          final String lang) {
         this.database = database;
         this.allPagesInNetwork = allPagesInNetwork;
         this.searchTerm = searchTerm;
+        this.lang = lang;
     }
 
     public TimeFrameGraph getGraphAtDate(final DateTime dateTime) {
         String revisionDateTime = dateTime.toString(DBUtil.MYSQL_DATETIME_FORMATTER);
         List<GraphEdge> allLinksInNetwork = buildAllLinksWithinNetwork(allPagesInNetwork, revisionDateTime);
         Map<String, List<String>> indegreeMatrix = initIndegreeMatrix(allLinksInNetwork);
-        Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
 
-        final int numberOfLinks = allLinksInNetwork.size();
-        Map<String, Float> pageIndegMap = Maps.newHashMap();
-        for (String targetPage : indegreeMatrix.keySet()) {
-            final float indegValue = calculateIndegree(numberOfLinks, indegreeMatrix.get(targetPage));
-            pageIndegMap.put(targetPage, indegValue);
-        }
+        Map<String, Float> pageIndegMap = createIndegreeMap(allLinksInNetwork, indegreeMatrix);
 
-        Set<String> mutuallyConnectedNeighbors = Sets.newHashSet();
-        for (GraphEdge graphEdge : allLinksInNetwork) {
-            if (allLinksInNetwork.contains(new GraphEdge(graphEdge.getTo(), graphEdge.getFrom()))) {
-                if (graphEdge.getFrom().equals(searchTerm) || graphEdge.getTo().equals(searchTerm)) {
-                    mutuallyConnectedNeighbors.add(graphEdge.getFrom());
-                    mutuallyConnectedNeighbors.add(graphEdge.getTo());
-                }
-            }
-        }
+        Set<String> mutuallyConnectedNeighbors = findMutuallyConnectedNeighbors(allLinksInNetwork);
 
         DefaultGraph graph = prepareGraph(allLinksInNetwork);
         Dijkstra shortestPath = prepareShortestPath(graph);
 
-        int nodeIndex = 0;
         final MapSorter<String, Float> mapSorter = new MapSorter<String, Float>();
         Map<String, Float> allPagesOrderedByIndeg = mapSorter.sortByValue(pageIndegMap);
 
@@ -91,22 +79,40 @@ public final class NetworkBuilder {
                         mutuallyConnectedNeighbors, allPagesOrderedByIndeg));
 
         Map<String, Integer> allDirectNeighborsByShortestPath = new MapSorter<String, Integer>()
-                .sortByValue(generateSPMapForDirectNeighbors(allPagesOrderedByIndeg.keySet(), shortestPath, graph), true);
+                .sortByValue(
+                        generateSPMapForDirectNeighbors(allPagesOrderedByIndeg.keySet(),
+                                shortestPath, graph), true);
 
-        //direct neighbors
-        /*for (String pageName : pageIndegMap.keySet()) {
-            if (!nameIndexMap.containsKey(pageName)) {
-                final boolean importantDirectNeighbor = importantDirectNeighbor(
-                        allPagesOrderedByIndeg, pageName, shortestPath, graph);
-                final boolean mutuallyConnectedNeighbor = mutuallyConnectedNeighbor(
-                        mutuallyConnectedNeighbors, allPagesOrderedByIndeg,
-                        pageName);
-                if (importantDirectNeighbor || mutuallyConnectedNeighbor) {
-                    nameIndexMap.put(pageName, nodeIndex++);
-                }
-            }
-        }*/
+        Map<String, Integer> nameIndexMap = addQualifiedNodesToMap(allPagesOrderedByIndeg,
+                allMutuallyConnectdNeighborsByIndeg, allDirectNeighborsByShortestPath);
 
+        List<GraphEdge> edgeOutput = prepareEdgeList(indegreeMatrix, nameIndexMap);
+
+//        AuthorRelatedPagesFetcher arpf = new AuthorRelatedPagesFetcher(nameIndexMap.keySet(), lang);
+//        arpf.getRelatedPages();
+
+        //-------------------------------------------
+        //-------------------------------------------
+        BetweennessCentrality bcb = new BetweennessCentrality();
+        bcb.setWeightAttributeName("weight");
+        bcb.init(graph);
+        LOG.info("Calulation: BetweennessCentrality");
+        bcb.compute();
+        for (String pageName : nameIndexMap.keySet()) {
+            Node node = graph.getNode(pageName);
+            System.out.println(node.getId() + "," + node.getAttribute("Cb") + "," + indegreeMatrix.get(pageName).size());
+        }
+        //-------------------------------------------
+        //-------------------------------------------
+
+        return new TimeFrameGraph(nameIndexMap, edgeOutput, dateTime);
+    }
+
+    private Map<String, Integer> addQualifiedNodesToMap(final Map<String, Float> allPagesOrderedByIndeg,
+                                                        final Map<String, Float> allMutuallyConnectdNeighborsByIndeg,
+                                                        final Map<String, Integer> allDirectNeighborsByShortestPath) {
+        Map<String, Integer> nameIndexMap = Maps.newLinkedHashMap();
+        int nodeIndex = 0;
         int mutualLimit = 0;
         for (String pageName : allMutuallyConnectdNeighborsByIndeg.keySet()) {
             if (mutualLimit++ > 25) {
@@ -126,8 +132,7 @@ public final class NetworkBuilder {
             }
         }
 
-        //indeg
-
+        //indeg, fill up
         for (Entry<String, Float> entry : allPagesOrderedByIndeg.entrySet()) {
             if (nodeIndex > MAX_NODES) {
                 break;
@@ -137,7 +142,35 @@ public final class NetworkBuilder {
                 nameIndexMap.put(pageName, nodeIndex++);
             }
         }
+        return nameIndexMap;
+    }
 
+    private Map<String, Float> createIndegreeMap(final List<GraphEdge> allLinksInNetwork,
+                                                 final Map<String, List<String>> indegreeMatrix) {
+        final int numberOfLinks = allLinksInNetwork.size();
+        Map<String, Float> pageIndegMap = Maps.newHashMap();
+        for (String targetPage : indegreeMatrix.keySet()) {
+            final float indegValue = calculateIndegree(numberOfLinks, indegreeMatrix.get(targetPage));
+            pageIndegMap.put(targetPage, indegValue);
+        }
+        return pageIndegMap;
+    }
+
+    private Set<String> findMutuallyConnectedNeighbors(final List<GraphEdge> allLinksInNetwork) {
+        Set<String> mutuallyConnectedNeighbors = Sets.newHashSet();
+        for (GraphEdge graphEdge : allLinksInNetwork) {
+            if (allLinksInNetwork.contains(new GraphEdge(graphEdge.getTo(), graphEdge.getFrom()))) {
+                if (graphEdge.getFrom().equals(searchTerm) || graphEdge.getTo().equals(searchTerm)) {
+                    mutuallyConnectedNeighbors.add(graphEdge.getFrom());
+                    mutuallyConnectedNeighbors.add(graphEdge.getTo());
+                }
+            }
+        }
+        return mutuallyConnectedNeighbors;
+    }
+
+    private List<GraphEdge> prepareEdgeList(final Map<String, List<String>> indegreeMatrix,
+                                            final Map<String, Integer> nameIndexMap) {
         List<GraphEdge> edgeOutput = Lists.newArrayList();
         for (Entry<String, List<String>> entry : indegreeMatrix.entrySet()) {
             String targetPageName = entry.getKey();
@@ -151,7 +184,7 @@ public final class NetworkBuilder {
                 }
             }
         }
-        return new TimeFrameGraph(nameIndexMap, edgeOutput, dateTime);
+        return edgeOutput;
     }
 
     private Map<String, Integer> generateSPMapForDirectNeighbors(final Set<String> allPages,
@@ -165,8 +198,9 @@ public final class NetworkBuilder {
         return neighbors;
     }
 
-    private Map<String, Float> generateIndegMapForMutuallyConnectedNeighbors(final Set<String> mutuallyConnectedNeighbors,
-                                                                             final Map<String, Float> allPagesOrderedByIndeg) {
+    private Map<String, Float> generateIndegMapForMutuallyConnectedNeighbors(
+            final Set<String> mutuallyConnectedNeighbors,
+            final Map<String, Float> allPagesOrderedByIndeg) {
         Map<String, Float> neighbors = Maps.newHashMap();
         for (String pageName : mutuallyConnectedNeighbors) {
             neighbors.put(pageName, allPagesOrderedByIndeg.get(pageName));
@@ -195,22 +229,6 @@ public final class NetworkBuilder {
                                     final List<String> allIncommingLinks) {
         int totalNumberOfLinks = allIncommingLinks.size();
         return ((float) totalNumberOfLinks / (float) numberOfLinks) * INDEG_MULTIPLICATOR;
-    }
-
-    private boolean mutuallyConnectedNeighbor(final Set<String> mutuallyConnectedNeighbors,
-                                              final Map<String, Float> allPagesOrderedByIndeg,
-                                              final String pageName) {
-        return mutuallyConnectedNeighbors.contains(pageName) &&
-               allPagesOrderedByIndeg.get(pageName) >= MIN_INDEG_FOR_MUTALLY_CONNECTED;
-    }
-
-    private boolean importantDirectNeighbor(final Map<String, Float> allPagesOrderedByIndeg,
-                                            final String pageName,
-                                            final Dijkstra shortestPath,
-                                            final DefaultGraph graph) {
-        int shortestPathLength = (int) shortestPath.getShortestPathLength(graph.getNode(pageName));
-        return shortestPathLength <= 1 &&
-               allPagesOrderedByIndeg.get(pageName) >= MIN_INDEG_FOR_DIRECT_NEIGHBOR;
     }
 
     /**

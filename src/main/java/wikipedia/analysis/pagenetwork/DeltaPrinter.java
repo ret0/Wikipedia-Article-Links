@@ -30,14 +30,16 @@ public final class DeltaPrinter {
 
     private final Map<Integer, String> allPages;
     private final List<DateTime> allTimeFrames;
+    private final String lang;
 
     public DeltaPrinter(final List<String> categories, final List<DateTime> allTimeFrames, final String lang) {
-        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), allTimeFrames);
+        this(new CategoryMemberFetcher(categories, lang, new DBUtil()).getAllPagesInAllCategories(), allTimeFrames, lang);
     }
 
-    public DeltaPrinter(final Map<Integer, String> allPages, final List<DateTime> allTimeFrames) {
+    public DeltaPrinter(final Map<Integer, String> allPages, final List<DateTime> allTimeFrames, final String lang) {
         this.allPages =  allPages;
         this.allTimeFrames = allTimeFrames;
+        this.lang = lang;
     }
 
     public static void main(final String[] args) throws IOException {
@@ -84,7 +86,7 @@ public final class DeltaPrinter {
         List<DateTime> allTimeFramesOldToNew = Lists.reverse(allTimeFrames);
         DBUtil database = new DBUtil();
         for (DateTime dateTime : allTimeFramesOldToNew) {
-            dateGraphMap.add(new NetworkBuilder(allPages, database, searchTerm).getGraphAtDate(dateTime));
+            dateGraphMap.add(new NetworkBuilder(allPages, database, searchTerm, lang).getGraphAtDate(dateTime));
         }
         return generateTimeFrameInformation(dateGraphMap);
     }
@@ -158,6 +160,7 @@ public final class DeltaPrinter {
                                                                         // graph
             allNodes.add(printNode(fixedName));
         }
+
         completeGraphJson.append(StringUtils.join(allNodes, ITEM_SEPARATOR));
         completeGraphJson.append("], \"links\":[");
 
@@ -167,6 +170,7 @@ public final class DeltaPrinter {
         for (GraphEdge edge : timeFrameGraph.getAllEdges()) {
             allEdges.add(printLink(nameIndexMap, edge));
         }
+
         completeGraphJson.append(StringUtils.join(allEdges, ITEM_SEPARATOR));
 
         completeGraphJson.append("] }");

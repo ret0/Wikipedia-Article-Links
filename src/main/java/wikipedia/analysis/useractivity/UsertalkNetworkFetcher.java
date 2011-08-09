@@ -1,7 +1,5 @@
 package wikipedia.analysis.useractivity;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -13,7 +11,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import util.Const;
+import util.HTTPUtil;
+import wikipedia.database.DBUtil;
 import wikipedia.http.WikiAPIClient;
 import wikipedia.network.GraphEdge;
 import wikipedia.xml.Api;
@@ -22,7 +21,11 @@ import wikipedia.xml.XMLTransformer;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class UsertalkNetworkFetcher {
+/**
+ * Returns a list of all User-Talk edges for the given list
+ * of wikipedia authors
+ */
+public final class UsertalkNetworkFetcher {
 
     private static final int NUM_THREADS = 16;
     private static final Logger LOG = LoggerFactory.getLogger(UsertalkNetworkFetcher.class.getName());
@@ -32,6 +35,7 @@ public class UsertalkNetworkFetcher {
     private final int numberOfUsersInNetwork;
     private final Map<GraphEdge, Integer> talkMatrix = Maps.newConcurrentMap();
     private final ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(NUM_THREADS);
+    private final DBUtil database = new DBUtil();
 
     public UsertalkNetworkFetcher(final String lang, final List<String> userIDs) {
         this.lang = lang;
@@ -87,11 +91,11 @@ public class UsertalkNetworkFetcher {
     }
 
     private List<String> sanitizeUserIDs(final List<String> userIDs) {
-        List<String> sanitizedUserIDs = Lists.newArrayList();
+        List<String> ids = Lists.newArrayList();
         for (String id : userIDs) {
-            sanitizedUserIDs.add(id.replaceAll("_", "_")); // XXX SANI FAIL?
+            ids.add(id.replaceAll("_", "_")); // XXX SANI FAIL?
         }
-        return sanitizedUserIDs;
+        return ids;
     }
 
     private final class GetUserTalk implements Runnable {
@@ -104,8 +108,15 @@ public class UsertalkNetworkFetcher {
 
         @Override
         public void run() {
-            LOG.info("Downloading Pair: " + userCommunicationPair);
-            int numberOfRevisions = downloadPairCommunication();
+            int numberOfRevisions;
+            if (database.userConversationInCache(userCommunicationPair)) {
+                LOG.info("Pair in Cache: " + userCommunicationPair);
+                numberOfRevisions = database.getUserConversationFromCache(userCommunicationPair);
+            } else {
+                LOG.info("Downloading Pair: " + userCommunicationPair);
+                numberOfRevisions = downloadPairCommunication();
+                database.cacheUserConversation(userCommunicationPair, numberOfRevisions);
+            }
             talkMatrix.put(userCommunicationPair, numberOfRevisions);
         }
 
@@ -117,8 +128,7 @@ public class UsertalkNetworkFetcher {
                 Api revisionFromXML;
                 try {
                     revisionFromXML = XMLTransformer.getRevisionFromXML(xml);
-                    numberOfRevisions = revisionFromXML.getQuery().getPages().get(0).getRevisions()
-                            .size();
+                    numberOfRevisions = revisionFromXML.getQuery().getPages().get(0).getRevisions().size();
                 } catch (Exception e) {
                     LOG.error("Exception while executing Fetch Thread", e);
                 }
@@ -127,19 +137,12 @@ public class UsertalkNetworkFetcher {
         }
 
         private String getUserTalkContribs(final WikiAPIClient wikiAPIClient) {
-            try {
-                final String from = URLEncoder
-                        .encode(userCommunicationPair.getFrom(), Const.ENCODING);
-                final String to = URLEncoder.encode(userCommunicationPair.getTo(), Const.ENCODING);
-                String urlStr = "http://"
-                        + lang
-                        + ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles=User%20talk:"
-                        + to + "&rvlimit=500&rvprop=flags%7Ctimestamp%7Cuser%7Csize&rvuser=" + from;
-                return wikiAPIClient.executeHTTPRequest(urlStr);
-            } catch (UnsupportedEncodingException e) {
-                LOG.error("UnsupportedEncodingException", e);
-            }
-            return "";
+            final String from = HTTPUtil.urlEncode(userCommunicationPair.getFrom());
+            final String to = HTTPUtil.urlEncode(userCommunicationPair.getTo());
+            String urlStr = "http://" + lang
+                    + ".wikipedia.org/w/api.php?format=xml&action=query&prop=revisions&titles=User%20talk:"
+                    + to + "&rvlimit=500&rvprop=flags%7Ctimestamp%7Cuser%7Csize&rvuser=" + from;
+            return wikiAPIClient.executeHTTPRequest(urlStr);
         }
     }
 }
