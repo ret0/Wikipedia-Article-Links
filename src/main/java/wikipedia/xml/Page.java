@@ -16,6 +16,17 @@ public final class Page {
     @Attribute(required = false)
     private int pageid;
 
+    @Attribute(required = false)
+    private String title;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
     public int getPageid() {
         return pageid;
     }

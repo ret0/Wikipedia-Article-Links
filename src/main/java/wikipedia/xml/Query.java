@@ -24,6 +24,20 @@ public final class Query {
     @ElementList(required = false)
     private List<Search> search;
 
+    @ElementList(required = false)
+    private List<Page> random;
+
+    @ElementList(required = false)
+    private List<Page> backlinks;
+
+    public List<Page> getRandom() {
+        return random;
+    }
+
+    public void setRandom(final List<Page> random) {
+        this.random = random;
+    }
+
     public List<Search> getSearch() {
         return search;
     }
@@ -54,5 +68,13 @@ public final class Query {
 
     public void setUsers(final List<User> users) {
         this.users = users;
+    }
+
+    public void setBacklinks(final List<Page> backlinks) {
+        this.backlinks = backlinks;
+    }
+
+    public List<Page> getBacklinks() {
+        return backlinks;
     }
 }
