@@ -166,9 +166,10 @@ public final class RelatedResultsFetcher {
             PageLinkInfoFetcher plif = new PageLinkInfoFetcher(topEntry, lang, mostRecentDate, wikiAPIClient);
             allSeenNodes.addAll(plif.getLinkInformation().getFilteredLinks());
         }
+        LOG.info("Downloading information for " + allSeenNodes.size() + " pages");
         Map<Integer, String> allPages = prepareNodesForNetwork(allSeenNodes);
 
-        DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames);
+        DeltaPrinter dp = new DeltaPrinter(allPages, allTimeFrames, lang);
         String completeJSONForPage = dp.buildNetworksAndGenerateInfo(searchTerm);
         writeToFile(completeJSONForPage);
     }
