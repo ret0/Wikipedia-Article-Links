@@ -27,6 +27,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import wikipedia.analysis.drilldown.NumberOfRecentEditsFetcher;
 import wikipedia.http.FirstRevisionFetcher;
 import wikipedia.http.WikiAPIClient;
+import wikipedia.network.GraphEdge;
 import wikipedia.network.PageLinkInfo;
 
 import com.google.common.base.Function;
@@ -39,6 +40,7 @@ import com.google.common.collect.Maps;
  */
 public final class DBUtil {
 
+    private static final String USER_TALK_QUERY = "SELECT nbrRevisions FROM usertalk_cache WHERE usertalk_cache.from = ? AND usertalk_cache.to = ?";
     private static final int SLEEP_BETWEEN_REQUESTS = 400;
     private static final int MAX_TITLE_LENGTH = 256;
     public static final String MYSQL_DATETIME = "YYYY-MM-dd HH:mm:ss";
@@ -97,7 +99,7 @@ public final class DBUtil {
                                    final String timeStamp,
                                    final String outgoingLink) {
                 if (outgoingLink.length() < MAX_TITLE_LENGTH) {
-                    //LOG.info("Storing " + outgoingLink);
+                    //LOG.info("Storing " + outgoingLink + " at " + timeStamp + " from Page: " + pliToBeStored.getPageTitle());
                     try {
                         jdbcTemplate.update(
                                 "INSERT INTO outgoing_links "
@@ -252,14 +254,39 @@ public final class DBUtil {
 
     public int getPageIDFromCache(final String pageTitle, final String lang) {
         try {
+            //FIXME introduce filtering for names like: File:
             int pageId = jdbcTemplate.queryForInt("SELECT page_id FROM pages WHERE page_title = ?",
                     new Object[] {pageTitle});
             return pageId;
         } catch (EmptyResultDataAccessException e) {
+            LOG.info("downloading id for page: " + pageTitle);
             return new NumberOfRecentEditsFetcher(lang).getPageID(pageTitle);
         } catch (IncorrectResultSizeDataAccessException e) {
+            LOG.info("downloading id for page: " + pageTitle);
             return new NumberOfRecentEditsFetcher(lang).getPageID(pageTitle);
         }
+    }
+
+    public boolean userConversationInCache(final GraphEdge userCommunicationPair) {
+        try {
+            jdbcTemplate.queryForInt(USER_TALK_QUERY,
+                    new Object[] {userCommunicationPair.getFrom(), userCommunicationPair.getTo()});
+            return true;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
+        }
+    }
+
+    public int getUserConversationFromCache(final GraphEdge userCommunicationPair) {
+        return jdbcTemplate.queryForInt(USER_TALK_QUERY,
+                new Object[] {userCommunicationPair.getFrom(), userCommunicationPair.getTo()});
+    }
+
+    public void cacheUserConversation(final GraphEdge userCommunicationPair,
+                                      final int numberOfRevisions) {
+        jdbcTemplate.update("INSERT INTO usertalk_cache (usertalk_cache.from, usertalk_cache.to, usertalk_cache.nbrRevisions) VALUES(?, ?, ?)",
+                new Object[] {userCommunicationPair.getFrom(), userCommunicationPair.getTo(),
+                        numberOfRevisions });
     }
 
 }
